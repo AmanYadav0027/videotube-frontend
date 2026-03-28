@@ -5,6 +5,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import Watch from "./pages/Watch";
+import Tweets from "./pages/Tweets";
 import AppLayout from "./components/AppLayout";
 
 function ProtectedRoute({ children }) {
@@ -48,6 +49,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="tweets"
+          element={
+            <ProtectedRoute>
+              <Tweets />
             </ProtectedRoute>
           }
         />

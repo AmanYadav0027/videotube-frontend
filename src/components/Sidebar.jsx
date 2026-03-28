@@ -11,7 +11,11 @@ import {
   Settings,
   Menu,
   ChevronRight,
+  Twitter,
 } from "lucide-react";
+import { markAsRead } from "../store/notificationSlice";
+import { useSelector, useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 // ─── Data ────────────────────────────────────────────────────────────────────
 
@@ -19,13 +23,14 @@ const PRIMARY_NAV = [
   { id: "home", label: "Home", icon: Home },
   { id: "liked", label: "Liked Videos", icon: Heart },
   { id: "subscriptions", label: "Subscriptions", icon: Rss },
+  { id: "tweets", label: "Tweets", icon: Twitter },
   { id: "history", label: "History", icon: History },
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "healthcheck", label: "Healthcheck", icon: Activity },
 ];
 
 const SECONDARY_NAV = [
-  { id: "notifications", label: "Notifications", icon: Bell, badge: true },
+  { id: "notifications", label: "Notifications", icon: Bell },
   { id: "support", label: "Support", icon: HelpCircle, badge: false },
   { id: "settings", label: "Settings", icon: Settings, badge: false },
 ];
@@ -116,6 +121,25 @@ export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [activeId, setActiveId] = useState("home");
 
+  const dispatch = useDispatch();
+  const unreadStatus = useSelector((state) => state.notifications);
+
+  const navigate = useNavigate();
+
+  const handleNavClick = (id) => {
+    setActiveId(id);
+
+    if (unreadStatus[id]) {
+      dispatch(markAsRead(id));
+    }
+
+    if (id === "home") {
+      navigate("/");
+    } else {
+      navigate(`/${id}`);
+    }
+  };
+
   return (
     <aside
       aria-label="Main navigation"
@@ -129,9 +153,6 @@ export default function Sidebar() {
       {/* ── subtle gradient wash ── */}
       <div className="pointer-events-none absolute inset-0 bg-linear-to-b from-indigo-950/20 via-transparent to-transparent" />
 
-      {/* ════════════════════════════════════════
-          TOP — Header
-      ════════════════════════════════════════ */}
       {/* ════════════════════════════════════════
           TOP — Header
       ════════════════════════════════════════ */}
@@ -192,10 +213,13 @@ export default function Sidebar() {
           {PRIMARY_NAV.map((item) => (
             <NavItem
               key={item.id}
-              item={item}
+              item={{
+                ...item,
+                badge: unreadStatus[item.id] || false,
+              }}
               collapsed={collapsed}
               active={activeId === item.id}
-              onClick={setActiveId}
+              onClick={handleNavClick}
             />
           ))}
         </ul>
@@ -213,10 +237,13 @@ export default function Sidebar() {
           {SECONDARY_NAV.map((item) => (
             <NavItem
               key={item.id}
-              item={item}
+              item={{
+                ...item,
+                badge: unreadStatus[item.id] || false,
+              }}
               collapsed={collapsed}
               active={activeId === item.id}
-              onClick={setActiveId}
+              onClick={handleNavClick}
             />
           ))}
         </ul>
