@@ -83,7 +83,7 @@ function DashboardSkeleton() {
             key={i}
             className="flex items-center gap-4 px-5 py-4 border-b border-white/5"
           >
-            <div className="w-32 h-[72px] rounded-lg bg-white/5 shrink-0" />
+            <div className="w-32 h-18 rounded-lg bg-white/5 shrink-0" />
             <div className="flex-1 space-y-2">
               <div className="h-3 bg-white/5 rounded w-3/4" />
               <div className="h-3 bg-white/4 rounded w-1/2" />
