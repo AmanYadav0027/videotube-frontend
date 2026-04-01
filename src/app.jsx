@@ -7,6 +7,9 @@ import Profile from "./pages/Profile";
 import Watch from "./pages/Watch";
 import Tweets from "./pages/Tweets";
 import AppLayout from "./components/AppLayout";
+import Channel from "./pages/Channel";
+import UploadVideo from "./pages/UploadVideo";
+import Dashboard from "./pages/Dashboard";
 
 function ProtectedRoute({ children }) {
   const isAuthenticated = useSelector((state) => state.auth.isAuthenticated);
@@ -57,6 +60,23 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Tweets />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="channel/:username" element={<Channel />} />
+        <Route
+          path="upload"
+          element={
+            <ProtectedRoute>
+              <UploadVideo />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
             </ProtectedRoute>
           }
         />
