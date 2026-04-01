@@ -32,12 +32,10 @@ export default function LikedVideos() {
     document.title = "Liked Videos — MyApp";
     const fetch = async () => {
       try {
-        // getLikedVideos → returns [{ video: { _id, title, ... } }]
         const res = await axios.get("/api/v2/likes/videos");
+        // The data is already exactly what we need!
         const data = res.data?.data ?? [];
-        // unwrap — each item has a .video object
-        const unwrapped = data.map((item) => item?.video).filter(Boolean);
-        setVideos(unwrapped);
+        setVideos(data);
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load liked videos.");
       } finally {

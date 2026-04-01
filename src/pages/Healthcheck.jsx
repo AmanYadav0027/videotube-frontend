@@ -16,7 +16,7 @@ export default function Healthcheck() {
     setLoading(true);
     setStatus(null);
     try {
-      const res = await axios.get("/api/v2/healthcheck");
+      const res = await axios.get("/api/v2/healthchecks");
       setStatus("ok");
       setMessage(res.data?.message || "API is healthy");
     } catch (err) {

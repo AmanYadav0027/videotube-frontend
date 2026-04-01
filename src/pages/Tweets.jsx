@@ -73,6 +73,10 @@ function TweetSkeleton() {
 // Tweet card
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Tweet card
+// ─────────────────────────────────────────────────────────────────────────────
+
 function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -80,6 +84,12 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
+
+  // -- NEW STATE FOR LIKES --
+  const [isLiked, setIsLiked] = useState(tweet.isLiked || false);
+  const [likesCount, setLikesCount] = useState(tweet.likesCount || 0);
+  const [liking, setLiking] = useState(false);
+
   const menuRef = useRef(null);
   const editRef = useRef(null);
 
@@ -140,6 +150,28 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
     } catch {
       setDeleting(false);
       setConfirmDel(false);
+    }
+  };
+
+  // -- NEW FUNCTION TO HANDLE LIKES --
+  const handleToggleLike = async () => {
+    if (!currentUserId || liking) return; // Prevent spam clicking
+
+    // Optimistic UI update
+    const previousIsLiked = isLiked;
+    setIsLiked(!previousIsLiked);
+    setLikesCount((prev) => (previousIsLiked ? prev - 1 : prev + 1));
+    setLiking(true);
+
+    try {
+      // Adjust this route to perfectly match your like.routes.js setup for tweets!
+      await axios.post(`/api/v2/likes/toggle/t/${tweet._id}`);
+    } catch {
+      // Revert if API fails
+      setIsLiked(previousIsLiked);
+      setLikesCount((prev) => (!previousIsLiked ? prev - 1 : prev + 1));
+    } finally {
+      setLiking(false);
     }
   };
 
@@ -256,9 +288,47 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
               </div>
             </div>
           ) : (
-            <p className="mt-1.5 text-sm text-slate-400 leading-relaxed whitespace-pre-wrap wrap-break-word">
-              {tweet.content}
-            </p>
+            <>
+              <p className="mt-1.5 text-sm text-slate-400 leading-relaxed whitespace-pre-wrap wrap-break-word">
+                {tweet.content}
+              </p>
+
+              {/* -- NEW LIKE BUTTON BAR -- */}
+              <div className="mt-4 flex items-center gap-4">
+                <button
+                  onClick={handleToggleLike}
+                  disabled={!currentUserId || liking}
+                  className={`flex items-center gap-1.5 text-xs transition-colors duration-200 group ${
+                    isLiked
+                      ? "text-rose-500"
+                      : "text-slate-500 hover:text-rose-400"
+                  } ${!currentUserId ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  <div
+                    className={`p-1.5 rounded-full transition-colors ${isLiked ? "bg-rose-500/10" : "group-hover:bg-rose-500/10"}`}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill={isLiked ? "currentColor" : "none"}
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className={`transition-transform duration-200 ${isLiked ? "scale-110" : "scale-100 group-hover:scale-110"}`}
+                    >
+                      <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                    </svg>
+                  </div>
+                  <span
+                    className={`font-medium tabular-nums ${isLiked ? "text-rose-500" : ""}`}
+                  >
+                    {likesCount > 0 ? likesCount : ""}
+                  </span>
+                </button>
+              </div>
+            </>
           )}
 
           {/* Delete confirm */}
