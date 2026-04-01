@@ -58,7 +58,7 @@ export default function About() {
           {FEATURES.map(({ icon: Icon, label, desc }) => (
             <div
               key={label}
-              className="bg-[#0f1117] border border-white/[0.07] rounded-2xl p-5 hover:border-white/12 transition-colors"
+              className="bg-[#0f1117] border border-white/7 rounded-2xl p-5 hover:border-white/12 transition-colors"
             >
               <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/15 flex items-center justify-center mb-3">
                 <Icon
