@@ -10,27 +10,27 @@ import { Bell, BellOff, Users, Video, Eye } from "lucide-react";
 function ChannelSkeleton() {
   return (
     <div className="animate-pulse space-y-0">
-      <div className="h-40 sm:h-52 bg-white/[0.05] rounded-b-none" />
+      <div className="h-40 sm:h-52 bg-white/5 rounded-b-none" />
       <div className="bg-[#0f1117] border border-white/[0.07] rounded-2xl rounded-t-none px-6 pb-6 pt-0">
         <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-10">
-          <div className="w-20 h-20 rounded-2xl bg-white/[0.08] border-4 border-[#0f1117]" />
+          <div className="w-20 h-20 rounded-2xl bg-white/8 border-4 border-[#0f1117]" />
           <div className="flex-1 space-y-2 pb-1">
-            <div className="h-5 bg-white/[0.06] rounded w-40" />
-            <div className="h-3 bg-white/[0.04] rounded w-24" />
+            <div className="h-5 bg-white/6 rounded w-40" />
+            <div className="h-3 bg-white/4 rounded w-24" />
           </div>
-          <div className="h-9 w-28 bg-white/[0.06] rounded-xl" />
+          <div className="h-9 w-28 bg-white/6 rounded-xl" />
         </div>
       </div>
       <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="space-y-3">
             <div
-              className="w-full rounded-xl bg-white/[0.05]"
+              className="w-full rounded-xl bg-white/5"
               style={{ aspectRatio: "16/9" }}
             />
             <div className="space-y-1.5 px-0.5">
-              <div className="h-3 bg-white/[0.05] rounded w-full" />
-              <div className="h-3 bg-white/[0.04] rounded w-2/3" />
+              <div className="h-3 bg-white/5 rounded w-full" />
+              <div className="h-3 bg-white/4 rounded w-2/3" />
             </div>
           </div>
         ))}
@@ -57,7 +57,7 @@ function ChannelVideoCard({ video }) {
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-indigo-950/60 to-[#1a1a24]" />
+          <div className="w-full h-full bg-linear-to-br from-indigo-950/60 to-[#1a1a24]" />
         )}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
         <span className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded-md bg-black/80 text-white text-[11px] font-semibold tabular-nums border border-white/10">
@@ -195,7 +195,7 @@ export default function Channel() {
     <div className="min-h-full bg-[#0a0a0f]">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-10">
         {/* ── Cover ── */}
-        <div className="relative h-40 sm:h-52 rounded-b-none overflow-hidden bg-gradient-to-br from-indigo-900/40 via-[#0f1117] to-violet-900/30">
+        <div className="relative h-40 sm:h-52 rounded-b-none overflow-hidden bg-linear-to-br from-indigo-900/40 via-[#0f1117] to-violet-900/30">
           {channel?.coverImage ? (
             <img
               src={channel.coverImage}
@@ -208,14 +208,14 @@ export default function Channel() {
               <div className="absolute -bottom-10 -right-10 w-64 h-64 bg-violet-500/10 rounded-full blur-3xl" />
             </div>
           )}
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#0f1117] to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-linear-to-t from-[#0f1117] to-transparent" />
         </div>
 
         {/* ── Profile card ── */}
         <div className="bg-[#0f1117] border border-t-0 border-white/[0.07] rounded-b-2xl px-5 sm:px-6 pb-6">
           <div className="flex flex-col sm:flex-row sm:items-end gap-4 -mt-10">
             {/* Avatar */}
-            <div className="flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-4 border-[#0f1117] overflow-hidden bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-xl shadow-black/40">
+            <div className="shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-4 border-[#0f1117] overflow-hidden bg-linear-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-xl shadow-black/40">
               {channel?.avatar ? (
                 <img
                   src={channel.avatar}
@@ -253,7 +253,7 @@ export default function Channel() {
             {isOwnChannel ? (
               <Link
                 to="/profile"
-                className="flex-shrink-0 px-4 py-2 rounded-xl text-sm font-medium border border-white/[0.1] text-slate-300 hover:bg-white/[0.06] transition-all duration-200"
+                className="shrink-0 px-4 py-2 rounded-xl text-sm font-medium border border-white/10 text-slate-300 hover:bg-white/6 transition-all duration-200"
               >
                 Edit profile
               </Link>
@@ -261,9 +261,9 @@ export default function Channel() {
               <button
                 onClick={handleToggleSubscribe}
                 disabled={subLoading}
-                className={`flex-shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 disabled:opacity-60 active:scale-95 ${
+                className={`shrink-0 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 disabled:opacity-60 active:scale-95 ${
                   subscribed
-                    ? "bg-white/[0.07] border border-white/[0.12] text-slate-300 hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-400"
+                    ? "bg-white/[0.07] border border-white/12 text-slate-300 hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-400"
                     : "bg-white text-[#0a0a0f] hover:bg-slate-100"
                 }`}
               >

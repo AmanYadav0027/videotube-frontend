@@ -12,12 +12,41 @@ import {
   Menu,
   ChevronRight,
   Twitter,
+  Upload,
+  Info,
 } from "lucide-react";
-import { markAsRead } from "../store/notificationSlice";
 import { useSelector, useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { markAsRead } from "../store/notificationSlice";
 
-// ─── Data ────────────────────────────────────────────────────────────────────
+// ─── Route map ───────────────────────────────────────────────────────────────
+// id → actual URL path
+const ROUTE_MAP = {
+  home: "/",
+  liked: "/liked",
+  subscriptions: "/subscriptions",
+  tweets: "/tweets",
+  history: "/history",
+  upload: "/upload",
+  dashboard: "/dashboard",
+  healthcheck: "/healthcheck",
+  notifications: "/notifications",
+  support: "/support",
+  settings: "/settings",
+  about: "/about",
+};
+
+// Protected routes — redirect to /login if not authenticated
+const PROTECTED = new Set([
+  "liked",
+  "subscriptions",
+  "tweets",
+  "history",
+  "upload",
+  "dashboard",
+  "notifications",
+  "settings",
+]);
 
 const PRIMARY_NAV = [
   { id: "home", label: "Home", icon: Home },
@@ -25,17 +54,18 @@ const PRIMARY_NAV = [
   { id: "subscriptions", label: "Subscriptions", icon: Rss },
   { id: "tweets", label: "Tweets", icon: Twitter },
   { id: "history", label: "History", icon: History },
+  { id: "upload", label: "Upload", icon: Upload },
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "healthcheck", label: "Healthcheck", icon: Activity },
 ];
 
 const SECONDARY_NAV = [
   { id: "notifications", label: "Notifications", icon: Bell },
-  { id: "support", label: "Support", icon: HelpCircle, badge: false },
-  { id: "settings", label: "Settings", icon: Settings, badge: false },
+  { id: "support", label: "Support", icon: HelpCircle },
+  { id: "settings", label: "Settings", icon: Settings },
 ];
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── NavItem ─────────────────────────────────────────────────────────────────
 
 function NavItem({ item, collapsed, active, onClick }) {
   const Icon = item.icon;
@@ -57,48 +87,39 @@ function NavItem({ item, collapsed, active, onClick }) {
           ${collapsed ? "justify-center px-2" : ""}
         `}
       >
-        {/* active left bar */}
         {active && (
           <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-indigo-400" />
         )}
 
-        {/* icon */}
         <span
           className={`shrink-0 transition-transform duration-200 group-hover:scale-110 ${active ? "text-indigo-400" : ""}`}
         >
           <Icon size={18} strokeWidth={1.75} />
         </span>
 
-        {/* label */}
         {!collapsed && <span className="truncate">{item.label}</span>}
 
-        {/* notification badge */}
         {item.badge && (
           <span
-            aria-label="Unread notifications"
-            className={`
-              shrink-0 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-[#0f1117]
-              ${collapsed ? "absolute top-1.5 right-1.5" : "ml-auto"}
-            `}
+            aria-label="Unread"
+            className={`shrink-0 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-[#0f1117]
+              ${collapsed ? "absolute top-1.5 right-1.5" : "ml-auto"}`}
           />
         )}
 
-        {/* tooltip when collapsed */}
         {collapsed && (
           <span
-            role="tooltip"
             className="
-              pointer-events-none absolute left-full ml-3 px-2.5 py-1.5
-              bg-slate-800 text-slate-100 text-xs rounded-lg whitespace-nowrap
-              opacity-0 translate-x-1 group-hover:opacity-100 group-hover:translate-x-0
-              transition-all duration-150 shadow-xl z-50
-              before:content-[''] before:absolute before:right-full before:top-1/2
-              before:-translate-y-1/2 before:border-4 before:border-transparent
-              before:border-r-slate-800
-            "
+            pointer-events-none absolute left-full ml-3 px-2.5 py-1.5
+            bg-slate-800 text-slate-100 text-xs rounded-lg whitespace-nowrap
+            opacity-0 translate-x-1 group-hover:opacity-100 group-hover:translate-x-0
+            transition-all duration-150 shadow-xl z-50
+            before:content-[''] before:absolute before:right-full before:top-1/2
+            before:-translate-y-1/2 before:border-4 before:border-transparent
+            before:border-r-slate-800
+          "
           >
             {item.label}
-            {item.badge && <span className="ml-1.5 text-rose-400">●</span>}
           </span>
         )}
       </button>
@@ -119,50 +140,50 @@ function SectionLabel({ label, collapsed }) {
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
-  const [activeId, setActiveId] = useState("home");
 
   const dispatch = useDispatch();
-  const unreadStatus = useSelector((state) => state.notifications);
-
   const navigate = useNavigate();
+  const location = useLocation();
+  const isAuthenticated = useSelector((s) => s.auth.isAuthenticated);
+  const unreadStatus = useSelector((s) => s.notifications);
+
+  // Derive active id from current URL — survives refresh
+  const activeId =
+    Object.entries(ROUTE_MAP).find(([, path]) =>
+      path === "/"
+        ? location.pathname === "/"
+        : location.pathname.startsWith(path),
+    )?.[0] ?? "home";
 
   const handleNavClick = (id) => {
-    setActiveId(id);
+    if (unreadStatus[id]) dispatch(markAsRead(id));
 
-    if (unreadStatus[id]) {
-      dispatch(markAsRead(id));
+    // redirect to login if protected and not authenticated
+    if (PROTECTED.has(id) && !isAuthenticated) {
+      navigate("/login");
+      return;
     }
 
-    if (id === "home") {
-      navigate("/");
-    } else {
-      navigate(`/${id}`);
-    }
+    navigate(ROUTE_MAP[id] ?? "/");
   };
 
   return (
     <aside
       aria-label="Main navigation"
-      data-collapsed={collapsed}
       className={`
         relative flex flex-col h-screen bg-[#0f1117] border-r border-white/6
         transition-[width] duration-300 ease-in-out overflow-hidden shrink-0
         ${collapsed ? "w-16" : "w-60"}
       `}
     >
-      {/* ── subtle gradient wash ── */}
       <div className="pointer-events-none absolute inset-0 bg-linear-to-b from-indigo-950/20 via-transparent to-transparent" />
 
-      {/* ════════════════════════════════════════
-          TOP — Header
-      ════════════════════════════════════════ */}
+      {/* Header */}
       <header
         className={`relative z-10 flex items-center ${collapsed ? "justify-center" : "justify-between"} px-3 py-4 border-b border-white/6 shrink-0`}
       >
-        {/* Group Logo and Title together - Hide completely when collapsed */}
         {!collapsed && (
-          <div className="flex items-center gap-3 min-w-0 overflow-hidden">
-            {/* Logo mark */}
+          <div className="flex items-center gap-3 min-w-0">
             <span className="shrink-0 w-8 h-8 rounded-lg bg-linear-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
               <ChevronRight
                 size={14}
@@ -170,9 +191,7 @@ export default function Sidebar() {
                 className="text-white -mr-0.5"
               />
             </span>
-
-            {/* Project name */}
-            <div className="flex flex-col min-w-0 overflow-hidden">
+            <div className="flex flex-col min-w-0">
               <span className="text-sm font-semibold text-slate-100 truncate leading-tight tracking-tight">
                 MyProject
               </span>
@@ -182,41 +201,26 @@ export default function Sidebar() {
             </div>
           </div>
         )}
-
-        {/* Toggle button - Stays visible and centers when collapsed */}
         <button
           onClick={() => setCollapsed((v) => !v)}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          aria-expanded={!collapsed}
-          className={`
-            shrink-0 w-8 h-8 rounded-lg flex items-center justify-center
-            text-slate-400 hover:text-slate-100 hover:bg-white/10
-            transition-all duration-200 outline-none
-            focus-visible:ring-2 focus-visible:ring-indigo-400/60
-          `}
+          className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-100 hover:bg-white/10 transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60"
         >
           <Menu size={18} strokeWidth={2} />
         </button>
       </header>
 
-      {/* ════════════════════════════════════════
-          MIDDLE — Primary Nav (scrollable)
-      ════════════════════════════════════════ */}
+      {/* Primary nav */}
       <nav
         aria-label="Primary navigation"
-        className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden px-2 py-2
-                   scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10
-                   hover:scrollbar-thumb-white/20"
+        className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden px-2 py-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10 hover:scrollbar-thumb-white/20"
       >
         <SectionLabel label="Main" collapsed={collapsed} />
         <ul className="space-y-0.5">
           {PRIMARY_NAV.map((item) => (
             <NavItem
               key={item.id}
-              item={{
-                ...item,
-                badge: unreadStatus[item.id] || false,
-              }}
+              item={{ ...item, badge: unreadStatus[item.id] || false }}
               collapsed={collapsed}
               active={activeId === item.id}
               onClick={handleNavClick}
@@ -225,9 +229,7 @@ export default function Sidebar() {
         </ul>
       </nav>
 
-      {/* ════════════════════════════════════════
-          BOTTOM — Secondary Nav (fixed)
-      ════════════════════════════════════════ */}
+      {/* Secondary nav */}
       <nav
         aria-label="Secondary navigation"
         className="relative z-10 px-2 pb-2 border-t border-white/6 shrink-0"
@@ -237,10 +239,7 @@ export default function Sidebar() {
           {SECONDARY_NAV.map((item) => (
             <NavItem
               key={item.id}
-              item={{
-                ...item,
-                badge: unreadStatus[item.id] || false,
-              }}
+              item={{ ...item, badge: unreadStatus[item.id] || false }}
               collapsed={collapsed}
               active={activeId === item.id}
               onClick={handleNavClick}
@@ -249,15 +248,12 @@ export default function Sidebar() {
         </ul>
       </nav>
 
-      {/* ════════════════════════════════════════
-          FOOTER — System Status
-      ════════════════════════════════════════ */}
+      {/* Footer */}
       <footer
         className="relative z-10 px-3 py-3 border-t border-white/6 shrink-0"
         aria-label="System status"
       >
         {collapsed ? (
-          /* collapsed: just the pulsing dot, centred */
           <div className="flex justify-center" title="System Online — v1.0.0">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
@@ -266,7 +262,6 @@ export default function Sidebar() {
           </div>
         ) : (
           <div className="flex items-center gap-2.5">
-            {/* pulsing dot */}
             <span className="relative flex h-2 w-2 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />

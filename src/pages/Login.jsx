@@ -234,10 +234,10 @@ export default function Login() {
 function inputCls(err) {
   return [
     "block w-full pl-9 pr-4 py-2.5 rounded-xl text-sm",
-    "bg-white/[0.03] border text-slate-100 placeholder-slate-600",
+    "bg-white/3 border text-slate-100 placeholder-slate-600",
     "focus:outline-none focus:ring-0 transition-all duration-200",
     err
       ? "border-rose-500/40 focus:border-rose-500/60 focus:bg-rose-500/5"
-      : "border-white/[0.08] focus:border-indigo-500/50 focus:bg-indigo-500/5",
+      : "border-white/8 focus:border-indigo-500/50 focus:bg-indigo-500/5",
   ].join(" ");
 }

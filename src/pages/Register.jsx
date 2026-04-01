@@ -59,7 +59,7 @@ export default function Register() {
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-violet-600/8 rounded-full blur-3xl" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-size[48px_48px]" />
+        <div className="absolute inset-0 bg-[linear-linear(rgba(255,255,255,0.015)_1px,transparent_1px),linear-linear(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-size[48px_48px]" />
       </div>
 
       <div className="relative w-full max-w-md">
@@ -347,11 +347,11 @@ export default function Register() {
 function inputCls(err) {
   return [
     "block w-full pl-9 pr-4 py-2.5 rounded-xl text-sm",
-    "bg-white/[0.03] border text-slate-100 placeholder-slate-600",
+    "bg-white/3 border text-slate-100 placeholder-slate-600",
     "focus:outline-none focus:ring-0 transition-all duration-200",
     err
       ? "border-rose-500/40 focus:border-rose-500/60 focus:bg-rose-500/5"
-      : "border-white/[0.08] focus:border-indigo-500/50 focus:bg-indigo-500/5",
+      : "border-white/8 focus:border-indigo-500/50 focus:bg-indigo-500/5",
   ].join(" ");
 }
 

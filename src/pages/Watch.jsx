@@ -55,20 +55,20 @@ function PlayerSkeleton() {
   return (
     <div className="space-y-4 animate-pulse">
       <div
-        className="w-full rounded-2xl bg-white/[0.05]"
+        className="w-full rounded-2xl bg-white/5"
         style={{ aspectRatio: "16/9" }}
       />
       <div className="space-y-2.5">
-        <div className="h-5 bg-white/[0.05] rounded-lg w-3/4" />
-        <div className="h-4 bg-white/[0.04] rounded-lg w-1/2" />
+        <div className="h-5 bg-white/5 rounded-lg w-3/4" />
+        <div className="h-4 bg-white/4 rounded-lg w-1/2" />
       </div>
-      <div className="flex items-center gap-3 py-4 border-y border-white/[0.05]">
-        <div className="w-10 h-10 rounded-full bg-white/[0.05]" />
+      <div className="flex items-center gap-3 py-4 border-y border-white/5">
+        <div className="w-10 h-10 rounded-full bg-white/5" />
         <div className="flex-1 space-y-1.5">
-          <div className="h-3.5 bg-white/[0.05] rounded w-32" />
-          <div className="h-3   bg-white/[0.04] rounded w-20" />
+          <div className="h-3.5 bg-white/5 rounded w-32" />
+          <div className="h-3   bg-white/4 rounded w-20" />
         </div>
-        <div className="h-8 w-28 bg-white/[0.05] rounded-xl" />
+        <div className="h-8 w-28 bg-white/5 rounded-xl" />
       </div>
     </div>
   );
@@ -80,13 +80,13 @@ function SuggestedSkeleton() {
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="flex gap-2.5">
           <div
-            className="w-40 flex-shrink-0 rounded-lg bg-white/[0.05]"
+            className="w-40 shrink-0 rounded-lg bg-white/5"
             style={{ aspectRatio: "16/9" }}
           />
           <div className="flex-1 space-y-1.5 pt-1">
-            <div className="h-3 bg-white/[0.05] rounded w-full" />
-            <div className="h-3 bg-white/[0.05] rounded w-3/4" />
-            <div className="h-2.5 bg-white/[0.04] rounded w-1/2" />
+            <div className="h-3 bg-white/5 rounded w-full" />
+            <div className="h-3 bg-white/5 rounded w-3/4" />
+            <div className="h-2.5 bg-white/4 rounded w-1/2" />
           </div>
         </div>
       ))}
@@ -99,11 +99,11 @@ function CommentSkeleton() {
     <div className="space-y-4 animate-pulse">
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className="flex gap-3">
-          <div className="w-8 h-8 rounded-full bg-white/[0.05] flex-shrink-0 mt-0.5" />
+          <div className="w-8 h-8 rounded-full bg-white/5 shrink-0 mt-0.5" />
           <div className="flex-1 space-y-2">
-            <div className="h-3 bg-white/[0.05] rounded w-28" />
-            <div className="h-3 bg-white/[0.04] rounded w-full" />
-            <div className="h-3 bg-white/[0.04] rounded w-3/4" />
+            <div className="h-3 bg-white/5 rounded w-28" />
+            <div className="h-3 bg-white/4 rounded w-full" />
+            <div className="h-3 bg-white/4 rounded w-3/4" />
           </div>
         </div>
       ))}
@@ -142,7 +142,7 @@ function CommentRow({ comment, currentUserId, onDelete }) {
   return (
     <div className="flex gap-3 group">
       {/* Avatar */}
-      <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mt-0.5">
+      <div className="shrink-0 w-8 h-8 rounded-full overflow-hidden bg-linear-to-br from-indigo-500 to-violet-600 flex items-center justify-center mt-0.5">
         {owner.avatar ? (
           <img
             src={owner.avatar}
@@ -166,14 +166,14 @@ function CommentRow({ comment, currentUserId, onDelete }) {
             {timeAgo(comment.createdAt)}
           </span>
         </div>
-        <p className="text-sm text-slate-400 mt-1 leading-relaxed break-words">
+        <p className="text-sm text-slate-400 mt-1 leading-relaxed wrap-break-word">
           {comment.content}
         </p>
       </div>
 
       {/* Delete — only for comment owner */}
       {isOwner && (
-        <div className="flex-shrink-0 flex items-start pt-0.5">
+        <div className="shrink-0 flex items-start pt-0.5">
           {confirmDelete ? (
             <div className="flex items-center gap-1">
               <button
@@ -328,7 +328,7 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
       {isAuthenticated ? (
         <form onSubmit={handleSubmit} className="flex gap-3">
           {/* Current user avatar */}
-          <div className="flex-shrink-0 w-8 h-8 rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mt-1">
+          <div className="shrink-0 w-8 h-8 rounded-full overflow-hidden bg-linear-to-br from-indigo-500 to-violet-600 flex items-center justify-center mt-1">
             {currentUser?.avatar ? (
               <img
                 src={currentUser.avatar}
@@ -352,7 +352,7 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
               }}
               placeholder="Add a comment…"
               rows={1}
-              className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 outline-none focus:border-indigo-500/50 focus:bg-indigo-500/5 transition-all duration-200 resize-none overflow-hidden"
+              className="w-full bg-white/3 border border-white/8 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 outline-none focus:border-indigo-500/50 focus:bg-indigo-500/5 transition-all duration-200 resize-none overflow-hidden"
             />
             {content.trim() && (
               <div className="flex items-center justify-between">
@@ -383,7 +383,7 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
           </div>
         </form>
       ) : (
-        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/2 border border-white/6">
           <MessageSquare size={14} className="text-slate-600" />
           <p className="text-sm text-slate-500">
             <Link
@@ -431,7 +431,7 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
             <button
               onClick={() => fetchComments(page + 1, true)}
               disabled={loadingMore}
-              className="w-full py-2.5 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-300 border border-white/[0.06] hover:border-white/[0.12] bg-white/[0.02] hover:bg-white/[0.05] transition-all duration-200 disabled:opacity-50"
+              className="w-full py-2.5 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-300 border border-white/6 hover:border-white/12 bg-white/2 hover:bg-white/5 transition-all duration-200 disabled:opacity-50"
             >
               {loadingMore ? "Loading…" : `Load more comments`}
             </button>
@@ -452,10 +452,10 @@ function SuggestedCard({ video }) {
   return (
     <Link
       to={`/watch/${_id}`}
-      className="flex gap-2.5 group rounded-xl p-1.5 -mx-1.5 hover:bg-white/[0.04] transition-colors duration-150"
+      className="flex gap-2.5 group rounded-xl p-1.5 -mx-1.5 hover:bg-white/4 transition-colors duration-150"
     >
       <div
-        className="relative flex-shrink-0 w-40 rounded-lg overflow-hidden bg-[#1a1a24]"
+        className="relative shrink-0 w-40 rounded-lg overflow-hidden bg-[#1a1a24]"
         style={{ aspectRatio: "16/9" }}
       >
         {thumbnail ? (
@@ -466,7 +466,7 @@ function SuggestedCard({ video }) {
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-indigo-950/60 to-[#1a1a24]" />
+          <div className="w-full h-full bg-linear-to-br from-indigo-950/60 to-[#1a1a24]" />
         )}
         <span className="absolute bottom-1 right-1 px-1 py-0.5 rounded text-[10px] font-semibold text-white bg-black/75 tabular-nums">
           {formatDuration(duration)}
@@ -760,7 +760,7 @@ export default function Watch() {
         />
       )}
 
-      <div className="max-w-[1400px] mx-auto">
+      <div className="max-w-350 mx-auto">
         <div className="flex flex-col xl:flex-row gap-6">
           {/* ── MAIN COLUMN ── */}
           <div className="flex-1 min-w-0 space-y-4">
@@ -826,7 +826,7 @@ export default function Watch() {
                       className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all duration-200 disabled:opacity-60 active:scale-95 ${
                         liked
                           ? "bg-indigo-500/15 border-indigo-500/40 text-indigo-300"
-                          : "bg-white/[0.04] border-white/[0.08] text-slate-400 hover:text-slate-200 hover:border-white/[0.14]"
+                          : "bg-white/4 border-white/8 text-slate-400 hover:text-slate-200 hover:border-white/[0.14]"
                       }`}
                     >
                       <ThumbsUp
@@ -843,7 +843,7 @@ export default function Watch() {
 
                     <button
                       onClick={handleShare}
-                      className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white/[0.04] border border-white/[0.08] text-slate-400 hover:text-slate-200 hover:border-white/[0.14] transition-all duration-200 active:scale-95"
+                      className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white/4 border border-white/8 text-slate-400 hover:text-slate-200 hover:border-white/[0.14] transition-all duration-200 active:scale-95"
                     >
                       {copied ? (
                         <>
@@ -860,12 +860,12 @@ export default function Watch() {
                   </div>
 
                   {/* Channel block */}
-                  <div className="flex items-center gap-3 py-4 border-y border-white/[0.06]">
+                  <div className="flex items-center gap-3 py-4 border-y border-white/6">
                     <Link
                       to={`/channel/${video.owner?.username}`}
-                      className="flex-shrink-0"
+                      className="shrink-0"
                     >
-                      <div className="w-11 h-11 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-indigo-500/40 transition-all duration-200 bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+                      <div className="w-11 h-11 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-indigo-500/40 transition-all duration-200 bg-linear-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
                         {video.owner?.avatar ? (
                           <img
                             src={video.owner.avatar}
@@ -904,7 +904,7 @@ export default function Watch() {
                       disabled={subLoading}
                       className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 disabled:opacity-60 active:scale-95 ${
                         subscribed
-                          ? "bg-white/[0.07] border border-white/[0.12] text-slate-300 hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-400"
+                          ? "bg-white/[0.07] border border-white/12 text-slate-300 hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-400"
                           : "bg-white text-[#0a0a0f] hover:bg-slate-100"
                       }`}
                     >
@@ -923,12 +923,10 @@ export default function Watch() {
                   </div>
 
                   {/* Description */}
-                  <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4">
+                  <div className="bg-white/3 border border-white/6 rounded-2xl p-4">
                     <div
                       className={`text-sm text-slate-400 leading-relaxed space-y-1 overflow-hidden transition-all duration-300 ${
-                        descExpanded || !isLongDesc
-                          ? "max-h-[2000px]"
-                          : "max-h-20"
+                        descExpanded || !isLongDesc ? "max-h-500" : "max-h-20"
                       }`}
                     >
                       {descLines.length > 0 ? (
@@ -962,7 +960,7 @@ export default function Watch() {
                   </div>
 
                   {/* ── Comments Section ── */}
-                  <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-5">
+                  <div className="bg-white/2 border border-white/6 rounded-2xl p-5">
                     <CommentsSection
                       videoId={videoId}
                       isAuthenticated={isAuthenticated}
@@ -975,7 +973,7 @@ export default function Watch() {
           </div>
 
           {/* ── SIDEBAR ── */}
-          <aside className="xl:w-[360px] flex-shrink-0 space-y-3">
+          <aside className="xl:w-90 shrink-0 space-y-3">
             <h2 className="text-[11px] font-semibold text-slate-500 uppercase tracking-widest">
               Up Next
             </h2>

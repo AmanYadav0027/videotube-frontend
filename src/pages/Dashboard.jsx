@@ -46,7 +46,7 @@ function StatCard({ label, value, icon: Icon, accent }) {
 
   return (
     <div className="bg-[#0f1117] border border-white/[0.07] rounded-2xl p-5 relative overflow-hidden">
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent" />
+      <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-indigo-500/20 to-transparent" />
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs text-slate-500 font-medium">{label}</p>
@@ -55,7 +55,7 @@ function StatCard({ label, value, icon: Icon, accent }) {
           </p>
         </div>
         <span
-          className={`w-10 h-10 rounded-xl flex items-center justify-center border flex-shrink-0 ${a.bg} ${a.border}`}
+          className={`w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 ${a.bg} ${a.border}`}
         >
           <Icon size={17} className={a.text} strokeWidth={1.75} />
         </span>
@@ -81,12 +81,12 @@ function DashboardSkeleton() {
         {Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}
-            className="flex items-center gap-4 px-5 py-4 border-b border-white/[0.05]"
+            className="flex items-center gap-4 px-5 py-4 border-b border-white/5"
           >
-            <div className="w-32 h-[72px] rounded-lg bg-white/[0.05] flex-shrink-0" />
+            <div className="w-32 h-[72px] rounded-lg bg-white/5 shrink-0" />
             <div className="flex-1 space-y-2">
-              <div className="h-3 bg-white/[0.05] rounded w-3/4" />
-              <div className="h-3 bg-white/[0.04] rounded w-1/2" />
+              <div className="h-3 bg-white/5 rounded w-3/4" />
+              <div className="h-3 bg-white/4 rounded w-1/2" />
             </div>
           </div>
         ))}
@@ -179,7 +179,7 @@ export default function Dashboard() {
           </div>
           <Link
             to="/upload"
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-lg shadow-indigo-500/20 transition-all duration-200 active:scale-95"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-lg shadow-indigo-500/20 transition-all duration-200 active:scale-95"
           >
             <Upload size={14} /> Upload Video
           </Link>
@@ -226,10 +226,10 @@ export default function Dashboard() {
 
             {/* ── Videos table ── */}
             <div className="bg-[#0f1117] border border-white/[0.07] rounded-2xl overflow-hidden">
-              <div className="h-px w-full bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent" />
+              <div className="h-px w-full bg-linear-to-r from-transparent via-indigo-500/20 to-transparent" />
 
               {/* Table header */}
-              <div className="px-5 py-4 border-b border-white/[0.05] flex items-center justify-between">
+              <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-slate-300">
                   Your Videos
                 </h2>
@@ -252,16 +252,16 @@ export default function Dashboard() {
                   </Link>
                 </div>
               ) : (
-                <div className="divide-y divide-white/[0.04]">
+                <div className="divide-y divide-white/4">
                   {videos.map((video) => (
                     <div
                       key={video._id}
-                      className="flex items-start gap-4 px-5 py-4 hover:bg-white/[0.02] transition-colors group"
+                      className="flex items-start gap-4 px-5 py-4 hover:bg-white/2 transition-colors group"
                     >
                       {/* Thumbnail */}
                       <Link
                         to={`/watch/${video._id}`}
-                        className="flex-shrink-0 relative w-32 rounded-lg overflow-hidden bg-[#1a1a24]"
+                        className="shrink-0 relative w-32 rounded-lg overflow-hidden bg-[#1a1a24]"
                         style={{ aspectRatio: "16/9" }}
                       >
                         {video.thumbnail ? (
@@ -308,7 +308,7 @@ export default function Dashboard() {
                       </div>
 
                       {/* Actions */}
-                      <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                      <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                         {/* Toggle publish */}
                         <button
                           onClick={() =>
@@ -363,7 +363,7 @@ export default function Dashboard() {
             onClick={() => setDeleteId(null)}
           />
           <div className="relative w-full max-w-sm bg-[#0f1117] border border-white/[0.07] rounded-2xl overflow-hidden shadow-2xl">
-            <div className="h-px w-full bg-gradient-to-r from-transparent via-rose-500/40 to-transparent" />
+            <div className="h-px w-full bg-linear-to-r from-transparent via-rose-500/40 to-transparent" />
             <div className="p-6 space-y-4">
               <div className="flex flex-col items-center text-center gap-3">
                 <span className="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
@@ -386,7 +386,7 @@ export default function Dashboard() {
               <div className="flex gap-2.5">
                 <button
                   onClick={() => setDeleteId(null)}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-100 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] transition-all"
+                  className="flex-1 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-100 bg-white/4 hover:bg-white/8 border border-white/[0.07] transition-all"
                 >
                   Cancel
                 </button>

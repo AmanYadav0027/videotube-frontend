@@ -51,7 +51,7 @@ function DropZone({ file, accept, label, hint, icon: Icon, onChange, error }) {
               ? "border-indigo-500/70 bg-indigo-500/10"
               : file
                 ? "border-emerald-500/40 bg-emerald-500/5"
-                : "border-white/[0.1] bg-white/[0.02] hover:border-indigo-500/40 hover:bg-indigo-500/5"
+                : "border-white/10 bg-white/2 hover:border-indigo-500/40 hover:bg-indigo-500/5"
         }`}
       >
         <div className="flex flex-col items-center gap-3 text-center">
@@ -69,7 +69,7 @@ function DropZone({ file, accept, label, hint, icon: Icon, onChange, error }) {
             </>
           ) : (
             <>
-              <div className="w-12 h-12 rounded-2xl bg-white/[0.05] flex items-center justify-center">
+              <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center">
                 <Icon size={22} className="text-slate-500" />
               </div>
               <div>
@@ -87,7 +87,7 @@ function DropZone({ file, accept, label, hint, icon: Icon, onChange, error }) {
               e.stopPropagation();
               onChange(null);
             }}
-            className="absolute top-3 right-3 p-1 rounded-lg bg-white/[0.06] text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+            className="absolute top-3 right-3 p-1 rounded-lg bg-white/6 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
           >
             <X size={14} />
           </button>
@@ -124,9 +124,9 @@ function ProgressBar({ progress }) {
           {progress}%
         </span>
       </div>
-      <div className="h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+      <div className="h-1.5 bg-white/6 rounded-full overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 rounded-full transition-all duration-300"
+          className="h-full bg-linear-to-r from-indigo-500 to-violet-500 rounded-full transition-all duration-300"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -314,10 +314,10 @@ export default function UploadVideo() {
               onChange={(e) => setTitle(e.target.value)}
               maxLength={100}
               placeholder="Give your video a great title"
-              className={`w-full px-4 py-2.5 rounded-xl text-sm text-slate-100 placeholder-slate-600 bg-white/[0.03] border outline-none transition-all duration-200 ${
+              className={`w-full px-4 py-2.5 rounded-xl text-sm text-slate-100 placeholder-slate-600 bg-white/3 border outline-none transition-all duration-200 ${
                 errors.title
                   ? "border-rose-500/40 focus:border-rose-500/60"
-                  : "border-white/[0.08] focus:border-indigo-500/50 focus:bg-indigo-500/5"
+                  : "border-white/8 focus:border-indigo-500/50 focus:bg-indigo-500/5"
               }`}
             />
             <div className="flex justify-between mt-1">
@@ -347,10 +347,10 @@ export default function UploadVideo() {
               maxLength={2000}
               rows={4}
               placeholder="Tell viewers about your video…"
-              className={`w-full px-4 py-2.5 rounded-xl text-sm text-slate-100 placeholder-slate-600 bg-white/[0.03] border outline-none transition-all duration-200 resize-none ${
+              className={`w-full px-4 py-2.5 rounded-xl text-sm text-slate-100 placeholder-slate-600 bg-white/3 border outline-none transition-all duration-200 resize-none ${
                 errors.description
                   ? "border-rose-500/40 focus:border-rose-500/60"
-                  : "border-white/[0.08] focus:border-indigo-500/50 focus:bg-indigo-500/5"
+                  : "border-white/8 focus:border-indigo-500/50 focus:bg-indigo-500/5"
               }`}
             />
             <div className="flex justify-between mt-1">
@@ -368,7 +368,7 @@ export default function UploadVideo() {
           {/* Server error */}
           {serverError && (
             <div className="flex items-start gap-2.5 px-4 py-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm">
-              <AlertTriangle size={15} className="flex-shrink-0 mt-0.5" />
+              <AlertTriangle size={15} className="shrink-0 mt-0.5" />
               {serverError}
             </div>
           )}
@@ -380,9 +380,9 @@ export default function UploadVideo() {
           <button
             type="submit"
             disabled={uploading}
-            className="relative w-full py-3 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-lg shadow-indigo-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.99] overflow-hidden group"
+            className="relative w-full py-3 rounded-xl text-sm font-semibold text-white bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-lg shadow-indigo-500/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.99] overflow-hidden group"
           >
-            <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
+            <span className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
             {uploading ? (
               <span className="flex items-center justify-center gap-2">
                 <Loader2 size={15} className="animate-spin" />

@@ -50,17 +50,17 @@ function TweetSkeleton() {
       {Array.from({ length: 5 }).map((_, i) => (
         <div
           key={i}
-          className="bg-[#0f1117] border border-white/[0.06] rounded-2xl p-5 animate-pulse"
+          className="bg-[#0f1117] border border-white/6 rounded-2xl p-5 animate-pulse"
         >
           <div className="flex gap-3">
-            <div className="w-9 h-9 rounded-full bg-white/[0.05] flex-shrink-0" />
+            <div className="w-9 h-9 rounded-full bg-white/5 shrink-0" />
             <div className="flex-1 space-y-2.5">
               <div className="flex gap-2">
-                <div className="h-3 bg-white/[0.05] rounded w-24" />
-                <div className="h-3 bg-white/[0.04] rounded w-16" />
+                <div className="h-3 bg-white/5 rounded w-24" />
+                <div className="h-3 bg-white/4 rounded w-16" />
               </div>
-              <div className="h-3 bg-white/[0.04] rounded w-full" />
-              <div className="h-3 bg-white/[0.04] rounded w-3/4" />
+              <div className="h-3 bg-white/4 rounded w-full" />
+              <div className="h-3 bg-white/4 rounded w-3/4" />
             </div>
           </div>
         </div>
@@ -144,13 +144,13 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
   };
 
   return (
-    <div className="bg-[#0f1117] border border-white/[0.06] rounded-2xl p-5 hover:border-white/[0.1] transition-colors duration-200 relative">
+    <div className="bg-[#0f1117] border border-white/6 rounded-2xl p-5 hover:border-white/10 transition-colors duration-200 relative">
       {/* top accent */}
-      <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent" />
+      <div className="absolute top-0 left-6 right-6 h-px bg-linear-to-r from-transparent via-indigo-500/20 to-transparent" />
 
       <div className="flex gap-3">
         {/* Avatar */}
-        <div className="flex-shrink-0 w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+        <div className="shrink-0 w-9 h-9 rounded-full overflow-hidden bg-linear-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
           {owner.avatar ? (
             <img
               src={owner.avatar}
@@ -184,25 +184,25 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
 
             {/* Menu — only for owner */}
             {isOwner && (
-              <div ref={menuRef} className="relative flex-shrink-0">
+              <div ref={menuRef} className="relative shrink-0">
                 <button
                   onClick={() => {
                     setMenuOpen((v) => !v);
                     setConfirmDel(false);
                   }}
-                  className="p-1.5 rounded-lg text-slate-600 hover:text-slate-300 hover:bg-white/[0.06] transition-all duration-150"
+                  className="p-1.5 rounded-lg text-slate-600 hover:text-slate-300 hover:bg-white/6 transition-all duration-150"
                 >
                   <MoreHorizontal size={15} />
                 </button>
 
                 {menuOpen && (
-                  <div className="absolute right-0 top-8 z-20 w-36 bg-[#1a1a24] border border-white/[0.1] rounded-xl shadow-2xl overflow-hidden">
+                  <div className="absolute right-0 top-8 z-20 w-36 bg-[#1a1a24] border border-white/10 rounded-xl shadow-2xl overflow-hidden">
                     <button
                       onClick={() => {
                         setEditing(true);
                         setMenuOpen(false);
                       }}
-                      className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs text-slate-300 hover:bg-white/[0.06] hover:text-white transition-colors"
+                      className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs text-slate-300 hover:bg-white/6 hover:text-white transition-colors"
                     >
                       <Edit3 size={13} /> Edit
                     </button>
@@ -234,7 +234,7 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
                   }
                 }}
                 rows={3}
-                className="w-full bg-white/[0.04] border border-indigo-500/30 rounded-xl px-3 py-2 text-sm text-slate-200 outline-none resize-none focus:border-indigo-500/60 transition-colors"
+                className="w-full bg-white/4 border border-indigo-500/30 rounded-xl px-3 py-2 text-sm text-slate-200 outline-none resize-none focus:border-indigo-500/60 transition-colors"
               />
               <div className="flex items-center justify-end gap-2">
                 <button
@@ -256,7 +256,7 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
               </div>
             </div>
           ) : (
-            <p className="mt-1.5 text-sm text-slate-400 leading-relaxed whitespace-pre-wrap break-words">
+            <p className="mt-1.5 text-sm text-slate-400 leading-relaxed whitespace-pre-wrap wrap-break-word">
               {tweet.content}
             </p>
           )}
@@ -431,11 +431,11 @@ export default function Tweets() {
         {/* ── Compose box ── */}
         {isAuthenticated ? (
           <div className="bg-[#0f1117] border border-white/[0.07] rounded-2xl overflow-hidden">
-            <div className="h-px w-full bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent" />
+            <div className="h-px w-full bg-linear-to-r from-transparent via-indigo-500/30 to-transparent" />
             <form onSubmit={handlePost} className="p-5">
               <div className="flex gap-3">
                 {/* Avatar */}
-                <div className="flex-shrink-0 w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+                <div className="shrink-0 w-9 h-9 rounded-full overflow-hidden bg-linear-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
                   {currentUser?.avatar ? (
                     <img
                       src={currentUser.avatar}
@@ -464,7 +464,7 @@ export default function Tweets() {
 
                   {/* footer row — only when content exists */}
                   {content.length > 0 && (
-                    <div className="flex items-center justify-between pt-2 border-t border-white/[0.05]">
+                    <div className="flex items-center justify-between pt-2 border-t border-white/5">
                       <span
                         className={`text-xs tabular-nums ${content.length > 450 ? "text-rose-400" : "text-slate-600"}`}
                       >
@@ -485,7 +485,7 @@ export default function Tweets() {
                         <button
                           type="submit"
                           disabled={posting || !content.trim()}
-                          className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-indigo-500/20"
+                          className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-semibold text-white bg-linear-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-indigo-500/20"
                         >
                           <Send size={11} strokeWidth={2.5} />
                           {posting ? "Posting…" : "Post"}

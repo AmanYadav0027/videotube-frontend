@@ -26,11 +26,11 @@ import {
 function inputCls(err) {
   return [
     "block w-full pl-9 pr-4 py-2.5 rounded-xl text-sm",
-    "bg-white/[0.03] border text-slate-100 placeholder-slate-600",
+    "bg-white/3 border text-slate-100 placeholder-slate-600",
     "focus:outline-none transition-all duration-200",
     err
       ? "border-rose-500/40 focus:border-rose-500/60 focus:bg-rose-500/5"
-      : "border-white/[0.08] focus:border-indigo-500/50 focus:bg-indigo-500/5",
+      : "border-white/8 focus:border-indigo-500/50 focus:bg-indigo-500/5",
   ].join(" ");
 }
 
@@ -58,7 +58,7 @@ function Field({ id, label, icon: Icon, error, children, required }) {
 function SectionCard({ title, description, children }) {
   return (
     <div className="bg-[#0f1117] border border-white/[0.07] rounded-2xl overflow-hidden">
-      <div className="h-px w-full bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent" />
+      <div className="h-px w-full bg-linear-to-r from-transparent via-indigo-500/30 to-transparent" />
       <div className="p-6">
         <div className="mb-5">
           <h2 className="text-sm font-semibold text-slate-200">{title}</h2>
@@ -83,9 +83,9 @@ function StatusBadge({ success, message }) {
       }`}
     >
       {success ? (
-        <Check size={13} className="flex-shrink-0 mt-0.5" />
+        <Check size={13} className="shrink-0 mt-0.5" />
       ) : (
-        <AlertTriangle size={13} className="flex-shrink-0 mt-0.5" />
+        <AlertTriangle size={13} className="shrink-0 mt-0.5" />
       )}
       <span>{message}</span>
     </div>
@@ -98,14 +98,14 @@ function SubmitButton({ loading, label, loadingLabel }) {
       type="submit"
       disabled={loading}
       className="relative py-2.5 px-6 rounded-xl text-sm font-semibold text-white
-        bg-gradient-to-r from-indigo-600 to-violet-600
+        bg-linear-to-r from-indigo-600 to-violet-600
         hover:from-indigo-500 hover:to-violet-500
         shadow-lg shadow-indigo-500/20
         focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60
         disabled:opacity-50 disabled:cursor-not-allowed
         transition-all duration-200 active:scale-[0.98] overflow-hidden group"
     >
-      <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
+      <span className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
       {loading ? (
         <span className="flex items-center gap-2">
           <Loader2 size={14} className="animate-spin" />
@@ -130,7 +130,7 @@ function LogoutModal({ onConfirm, onCancel, loading, error }) {
         onClick={onCancel}
       />
       <div className="relative w-full max-w-sm bg-[#0f1117] border border-white/[0.07] rounded-2xl shadow-2xl shadow-black/60 overflow-hidden">
-        <div className="h-px w-full bg-gradient-to-r from-transparent via-rose-500/40 to-transparent" />
+        <div className="h-px w-full bg-linear-to-r from-transparent via-rose-500/40 to-transparent" />
         <div className="px-6 py-6">
           <button
             onClick={onCancel}
@@ -151,7 +151,7 @@ function LogoutModal({ onConfirm, onCancel, loading, error }) {
           </div>
           {error && (
             <div className="mb-4 flex items-start gap-2 px-3 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs">
-              <AlertTriangle size={13} className="flex-shrink-0 mt-0.5" />
+              <AlertTriangle size={13} className="shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
           )}
@@ -159,7 +159,7 @@ function LogoutModal({ onConfirm, onCancel, loading, error }) {
             <button
               onClick={onCancel}
               disabled={loading}
-              className="flex-1 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-100 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] transition-all duration-200 disabled:opacity-50"
+              className="flex-1 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-100 bg-white/4 hover:bg-white/8 border border-white/[0.07] transition-all duration-200 disabled:opacity-50"
             >
               Cancel
             </button>
@@ -168,7 +168,7 @@ function LogoutModal({ onConfirm, onCancel, loading, error }) {
               disabled={loading}
               className="flex-1 relative py-2.5 rounded-xl text-sm font-semibold text-white bg-rose-600 hover:bg-rose-500 shadow-lg shadow-rose-500/20 transition-all duration-200 disabled:opacity-50 overflow-hidden group"
             >
-              <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
+              <span className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 pointer-events-none" />
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <Loader2 size={13} className="animate-spin" />
@@ -362,7 +362,7 @@ export default function Profile() {
     <div className="min-h-full bg-[#0a0a0f] relative">
       {/* background glows */}
       <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute top-0 left-1/3 w-[500px] h-[500px] bg-indigo-600/6 rounded-full blur-3xl" />
+        <div className="absolute top-0 left-1/3 w-125 h-125 bg-indigo-600/6 rounded-full blur-3xl" />
         <div className="absolute bottom-0 right-1/3 w-96 h-96 bg-violet-600/5 rounded-full blur-3xl" />
       </div>
 
@@ -371,7 +371,7 @@ export default function Profile() {
             HERO CARD
         ══════════════════════════════════════════════════════ */}
         <div className="bg-[#0f1117] border border-white/[0.07] rounded-2xl overflow-hidden">
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent" />
+          <div className="h-px w-full bg-linear-to-r from-transparent via-indigo-500/40 to-transparent" />
 
           {/* ── Cover ── */}
           <div
@@ -387,10 +387,10 @@ export default function Profile() {
               />
             ) : (
               // Fallback: animated gradient mesh — looks great with no image
-              <div className="w-full h-full bg-gradient-to-br from-indigo-900/60 via-violet-900/30 to-[#0f1117] relative overflow-hidden">
+              <div className="w-full h-full bg-linear-to-br from-indigo-900/60 via-violet-900/30 to-[#0f1117] relative overflow-hidden">
                 <div className="absolute -top-8 -left-8 w-48 h-48 bg-indigo-500/20 rounded-full blur-2xl" />
                 <div className="absolute -bottom-8 -right-8 w-64 h-64 bg-violet-500/15 rounded-full blur-2xl" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-px bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-px bg-linear-to-r from-transparent via-indigo-500/20 to-transparent" />
               </div>
             )}
 
@@ -409,7 +409,7 @@ export default function Profile() {
             </div>
 
             {/* bottom fade into card */}
-            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#0f1117] to-transparent pointer-events-none" />
+            <div className="absolute inset-x-0 bottom-0 h-20 bg-linear-to-t from-[#0f1117] to-transparent pointer-events-none" />
 
             <input
               ref={coverRef}
@@ -424,7 +424,7 @@ export default function Profile() {
           <div className="px-5 sm:px-6 pb-6 -mt-12 relative">
             <div className="flex flex-col sm:flex-row sm:items-end gap-4">
               {/* Avatar */}
-              <div className="relative flex-shrink-0 group w-fit">
+              <div className="relative shrink-0 group w-fit">
                 <div
                   className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl border-[3px] border-[#0f1117] overflow-hidden shadow-xl shadow-black/50 cursor-pointer"
                   onClick={() => !avatarLoading && avatarRef.current?.click()}
@@ -437,7 +437,7 @@ export default function Profile() {
                     />
                   ) : (
                     // Initials fallback — much better than a plain icon
-                    <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+                    <div className="w-full h-full bg-linear-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
                       <span className="text-white font-bold text-2xl tracking-tight select-none">
                         {initials}
                       </span>
@@ -480,8 +480,8 @@ export default function Profile() {
 
                 {/* chips row */}
                 <div className="flex flex-wrap items-center gap-2 mt-3">
-                  <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] border border-white/[0.06] text-[11px] text-slate-500 max-w-[200px] truncate">
-                    <Mail size={10} className="flex-shrink-0" />
+                  <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/4 border border-white/6 text-[11px] text-slate-500 max-w-50 truncate">
+                    <Mail size={10} className="shrink-0" />
                     {user?.email || "email@example.com"}
                   </span>
                   <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/15 text-[11px] text-indigo-400">
@@ -680,7 +680,7 @@ export default function Profile() {
             DANGER ZONE
         ══════════════════════════════════════════════════════ */}
         <div className="bg-[#0f1117] border border-rose-500/15 rounded-2xl overflow-hidden">
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-rose-500/30 to-transparent" />
+          <div className="h-px w-full bg-linear-to-r from-transparent via-rose-500/30 to-transparent" />
           <div className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <h2 className="text-sm font-semibold text-slate-200">Sign out</h2>
@@ -690,7 +690,7 @@ export default function Profile() {
             </div>
             <button
               onClick={() => setShowLogout(true)}
-              className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-rose-400 border border-rose-500/20 bg-rose-500/[0.06] hover:bg-rose-500/[0.14] hover:border-rose-500/35 transition-all duration-200"
+              className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-rose-400 border border-rose-500/20 bg-rose-500/6 hover:bg-rose-500/15 hover:border-rose-500/35 transition-all duration-200"
             >
               <LogOut size={14} strokeWidth={2} />
               Sign out

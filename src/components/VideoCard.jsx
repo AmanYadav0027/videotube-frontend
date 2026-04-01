@@ -36,7 +36,7 @@ export default function VideoCard({ video }) {
             className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-950/60 to-[#1a1a24]">
+          <div className="w-full h-full flex items-center justify-center bg-linear-to-br from-indigo-950/60 to-[#1a1a24]">
             <svg
               width="36"
               height="36"
@@ -73,9 +73,9 @@ export default function VideoCard({ video }) {
           to={`/channel/${owner?.username}`}
           onClick={(e) => e.stopPropagation()}
           aria-label={`Visit ${owner?.username}'s channel`}
-          className="flex-shrink-0 mt-0.5"
+          className="shrink-0 mt-0.5"
         >
-          <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-indigo-500/50 transition-all duration-200 bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent hover:ring-indigo-500/50 transition-all duration-200 bg-linear-to-br from-indigo-500 to-violet-600 flex items-center justify-center">
             {owner?.avatar ? (
               <img
                 src={owner.avatar}
