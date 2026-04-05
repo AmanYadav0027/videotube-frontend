@@ -11,6 +11,8 @@ import {
   MessageSquare,
   User,
   MoreHorizontal,
+  MessageCircle,
+  Repeat2,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -293,8 +295,41 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
                 {tweet.content}
               </p>
 
-              {/* -- NEW LIKE BUTTON BAR -- */}
-              <div className="mt-4 flex items-center gap-4">
+              {/* -- INTERACTION BAR -- */}
+              <div className="mt-4 flex items-center gap-6">
+                {/* Reply / Comment */}
+                <button
+                  onClick={() => console.log("Open comment modal")}
+                  className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-indigo-400 transition-colors duration-200 group"
+                >
+                  <div className="p-1.5 rounded-full transition-colors group-hover:bg-indigo-500/10">
+                    <MessageCircle
+                      size={16}
+                      className="transition-transform duration-200 group-hover:scale-110"
+                    />
+                  </div>
+                  <span className="font-medium tabular-nums">
+                    {tweet.commentsCount > 0 ? tweet.commentsCount : ""}
+                  </span>
+                </button>
+
+                {/* Retweet / Repost */}
+                <button
+                  onClick={() => console.log("Trigger retweet")}
+                  className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-emerald-400 transition-colors duration-200 group"
+                >
+                  <div className="p-1.5 rounded-full transition-colors group-hover:bg-emerald-500/10">
+                    <Repeat2
+                      size={16}
+                      className="transition-transform duration-200 group-hover:scale-110"
+                    />
+                  </div>
+                  <span className="font-medium tabular-nums">
+                    {tweet.retweetsCount > 0 ? tweet.retweetsCount : ""}
+                  </span>
+                </button>
+
+                {/* Like Button (Your existing working code!) */}
                 <button
                   onClick={handleToggleLike}
                   disabled={!currentUserId || liking}

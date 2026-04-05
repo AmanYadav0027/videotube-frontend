@@ -705,6 +705,7 @@ export default function Watch() {
         "success",
       );
     } catch (err) {
+      console.log("Sub error:", err.response?.data);
       setSubscribed(prevSub);
       setSubscribersCount(prevCount);
       showToast(
