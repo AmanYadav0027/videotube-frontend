@@ -18,6 +18,12 @@ import {
   Share2,
   Trash2,
   User,
+  Sparkles,
+  BookOpen,
+  ListVideo,
+  Loader2,
+  Clock,
+  AlertCircle,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -112,6 +118,178 @@ function CommentSkeleton() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// AI Insights Panel
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Converts "MM:SS" timestamp string to total seconds for seeking the video.
+ * Handles edge cases like missing colons or non-numeric values.
+ */
+function timeToSeconds(timeStr) {
+  if (!timeStr) return 0;
+  const parts = timeStr.split(":").map(Number);
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  return 0;
+}
+
+function AiInsights({ video, videoRef }) {
+  const [activeTab, setActiveTab] = useState("summary"); // "summary" | "chapters"
+
+  const { aiStatus, aiSummary, aiChapters } = video;
+
+  // Seek the video player to the chapter's timestamp
+  const handleChapterClick = (timeStr) => {
+    const seconds = timeToSeconds(timeStr);
+    if (videoRef?.current) {
+      videoRef.current.currentTime = seconds;
+      videoRef.current.play().catch(() => {});
+      // Scroll to player smoothly
+      videoRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  };
+
+  // ── PROCESSING state ──────────────────────────────────────────────────────
+  if (aiStatus === "PROCESSING" || aiStatus === "PENDING") {
+    return (
+      <div className="relative overflow-hidden bg-white/2 border border-white/6 rounded-2xl p-5">
+        {/* Animated shimmer bar at top */}
+        <div className="absolute top-0 left-0 right-0 h-px">
+          <div className="h-full bg-gradient-to-r from-transparent via-indigo-500/60 to-transparent animate-[shimmer_2s_ease-in-out_infinite]" />
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
+            <Loader2 size={15} className="text-indigo-400 animate-spin" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-slate-200">
+              AI is analyzing this video
+            </p>
+            <p className="text-xs text-slate-600 mt-0.5">
+              Summary and chapters will appear shortly…
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── FAILED state ──────────────────────────────────────────────────────────
+  if (aiStatus === "FAILED") {
+    return (
+      <div className="flex items-center gap-3 bg-white/2 border border-white/6 rounded-2xl p-5">
+        <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center shrink-0">
+          <AlertCircle size={15} className="text-rose-400" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-slate-300">
+            AI analysis unavailable
+          </p>
+          <p className="text-xs text-slate-600 mt-0.5">
+            Could not generate insights for this video.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── No AI data yet (video uploaded before AI feature existed) ─────────────
+  if (
+    aiStatus !== "COMPLETED" ||
+    (!aiSummary && (!aiChapters || aiChapters.length === 0))
+  ) {
+    return null;
+  }
+
+  // ── COMPLETED ─────────────────────────────────────────────────────────────
+  return (
+    <div className="bg-white/2 border border-white/6 rounded-2xl overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-2.5 px-5 pt-5 pb-4 border-b border-white/5">
+        <div className="w-7 h-7 rounded-lg bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center shrink-0">
+          <Sparkles size={13} className="text-indigo-400" />
+        </div>
+        <span className="text-sm font-semibold text-slate-200">
+          AI Insights
+        </span>
+        <span className="ml-auto text-[10px] font-medium text-indigo-400/70 bg-indigo-500/10 border border-indigo-500/15 px-2 py-0.5 rounded-full">
+          Powered by Gemini
+        </span>
+      </div>
+
+      {/* Tabs — only show if both summary and chapters exist */}
+      {aiSummary && aiChapters?.length > 0 && (
+        <div className="flex border-b border-white/5 px-5">
+          <button
+            onClick={() => setActiveTab("summary")}
+            className={`flex items-center gap-1.5 py-3 text-xs font-medium border-b-2 mr-5 transition-all duration-150 ${
+              activeTab === "summary"
+                ? "border-indigo-500 text-indigo-300"
+                : "border-transparent text-slate-500 hover:text-slate-400"
+            }`}
+          >
+            <BookOpen size={12} />
+            Summary
+          </button>
+          <button
+            onClick={() => setActiveTab("chapters")}
+            className={`flex items-center gap-1.5 py-3 text-xs font-medium border-b-2 transition-all duration-150 ${
+              activeTab === "chapters"
+                ? "border-indigo-500 text-indigo-300"
+                : "border-transparent text-slate-500 hover:text-slate-400"
+            }`}
+          >
+            <ListVideo size={12} />
+            Chapters
+            <span className="ml-1 text-[10px] bg-white/8 text-slate-500 px-1.5 py-0.5 rounded-full">
+              {aiChapters.length}
+            </span>
+          </button>
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="px-5 py-4">
+        {/* Summary tab — or summary-only if no chapters */}
+        {(activeTab === "summary" || !aiChapters?.length) && aiSummary && (
+          <p className="text-sm text-slate-400 leading-relaxed">{aiSummary}</p>
+        )}
+
+        {/* Chapters tab — or chapters-only if no summary */}
+        {(activeTab === "chapters" || !aiSummary) && aiChapters?.length > 0 && (
+          <div className="space-y-1">
+            {aiChapters.map((chapter, i) => (
+              <button
+                key={i}
+                onClick={() => handleChapterClick(chapter.time)}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-white/5 active:bg-white/8 transition-all duration-150 group"
+              >
+                {/* Chapter index dot */}
+                <span className="shrink-0 w-5 h-5 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-[10px] font-bold text-indigo-400 group-hover:bg-indigo-500/20 transition-colors">
+                  {i + 1}
+                </span>
+
+                {/* Title */}
+                <span className="flex-1 text-xs font-medium text-slate-300 group-hover:text-slate-100 transition-colors truncate">
+                  {chapter.title}
+                </span>
+
+                {/* Timestamp pill */}
+                <span className="shrink-0 flex items-center gap-1 text-[11px] font-mono font-medium text-indigo-400/80 bg-indigo-500/8 border border-indigo-500/15 px-2 py-0.5 rounded-lg group-hover:bg-indigo-500/15 group-hover:text-indigo-300 transition-all">
+                  <Clock size={10} strokeWidth={2} />
+                  {chapter.time}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Single comment row
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -130,7 +308,6 @@ function CommentRow({ comment, currentUserId, onDelete }) {
     }
     setDeleting(true);
     try {
-      // DELETE /api/v2/comments/c/:commentId
       await axios.delete(`/api/v2/comments/c/${comment._id}`);
       onDelete(comment._id);
     } catch {
@@ -141,7 +318,6 @@ function CommentRow({ comment, currentUserId, onDelete }) {
 
   return (
     <div className="flex gap-3 group">
-      {/* Avatar */}
       <div className="shrink-0 w-8 h-8 rounded-full overflow-hidden bg-linear-to-br from-indigo-500 to-violet-600 flex items-center justify-center mt-0.5">
         {owner.avatar ? (
           <img
@@ -156,7 +332,6 @@ function CommentRow({ comment, currentUserId, onDelete }) {
         )}
       </div>
 
-      {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs font-semibold text-slate-300">
@@ -171,7 +346,6 @@ function CommentRow({ comment, currentUserId, onDelete }) {
         </p>
       </div>
 
-      {/* Delete — only for comment owner */}
       {isOwner && (
         <div className="shrink-0 flex items-start pt-0.5">
           {confirmDelete ? (
@@ -221,7 +395,6 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
   const [error, setError] = useState("");
   const textareaRef = useRef(null);
 
-  // Fetch comments — GET /api/v2/comments/:videoId
   const fetchComments = useCallback(
     async (pageNum = 1, append = false) => {
       append ? setLoadingMore(true) : setLoading(true);
@@ -231,7 +404,6 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
         });
         const data = res.data?.data;
         const docs = data?.docs ?? [];
-
         setComments((prev) => (append ? [...prev, ...docs] : docs));
         setHasNextPage(data?.hasNextPage ?? false);
         setTotalComments(data?.totalDocs ?? 0);
@@ -250,15 +422,12 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
     if (videoId) fetchComments(1, false);
   }, [videoId, fetchComments]);
 
-  // Add comment — POST /api/v2/comments/:videoId
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!content.trim() || submitting) return;
-
     setSubmitting(true);
     setError("");
 
-    // optimistic — build a fake comment to show instantly
     const optimistic = {
       _id: `temp_${Date.now()}`,
       content: content.trim(),
@@ -280,16 +449,12 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
         content: optimistic.content,
       });
       const real = res.data?.data;
-      // replace optimistic comment with real one from backend
       setComments((prev) =>
         prev.map((c) =>
-          c._id === optimistic._id
-            ? { ...real, owner: optimistic.owner } // backend doesn't return owner populated
-            : c,
+          c._id === optimistic._id ? { ...real, owner: optimistic.owner } : c,
         ),
       );
     } catch (err) {
-      // revert on failure
       setComments((prev) => prev.filter((c) => c._id !== optimistic._id));
       setTotalComments((c) => Math.max(0, c - 1));
       setContent(optimistic.content);
@@ -299,13 +464,11 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
     }
   };
 
-  // Delete comment — handled in CommentRow, just remove from state here
   const handleDelete = useCallback((commentId) => {
     setComments((prev) => prev.filter((c) => c._id !== commentId));
     setTotalComments((c) => Math.max(0, c - 1));
   }, []);
 
-  // Auto-resize textarea
   const handleTextareaChange = (e) => {
     setContent(e.target.value);
     e.target.style.height = "auto";
@@ -314,7 +477,6 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
       <div className="flex items-center gap-2">
         <MessageSquare size={16} className="text-slate-500" />
         <h3 className="text-sm font-semibold text-slate-300">
@@ -324,10 +486,8 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
         </h3>
       </div>
 
-      {/* Add comment input */}
       {isAuthenticated ? (
         <form onSubmit={handleSubmit} className="flex gap-3">
-          {/* Current user avatar */}
           <div className="shrink-0 w-8 h-8 rounded-full overflow-hidden bg-linear-to-br from-indigo-500 to-violet-600 flex items-center justify-center mt-1">
             {currentUser?.avatar ? (
               <img
@@ -339,14 +499,12 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
               <User size={14} className="text-white" />
             )}
           </div>
-
           <div className="flex-1 space-y-2">
             <textarea
               ref={textareaRef}
               value={content}
               onChange={handleTextareaChange}
               onKeyDown={(e) => {
-                // Ctrl+Enter or Cmd+Enter to submit
                 if ((e.ctrlKey || e.metaKey) && e.key === "Enter")
                   handleSubmit(e);
               }}
@@ -397,14 +555,12 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
         </div>
       )}
 
-      {/* Error */}
       {error && (
         <p className="text-xs text-rose-400 flex items-center gap-1.5">
           <X size={12} /> {error}
         </p>
       )}
 
-      {/* Comments list */}
       {loading ? (
         <CommentSkeleton />
       ) : comments.length === 0 ? (
@@ -425,15 +581,13 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
               onDelete={handleDelete}
             />
           ))}
-
-          {/* Load more */}
           {hasNextPage && (
             <button
               onClick={() => fetchComments(page + 1, true)}
               disabled={loadingMore}
               className="w-full py-2.5 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-300 border border-white/6 hover:border-white/12 bg-white/2 hover:bg-white/5 transition-all duration-200 disabled:opacity-50"
             >
-              {loadingMore ? "Loading…" : `Load more comments`}
+              {loadingMore ? "Loading…" : "Load more comments"}
             </button>
           )}
         </div>
@@ -542,7 +696,6 @@ export default function Watch() {
   // ── Fetch video + like status ──────────────────────────────────────────────
   useEffect(() => {
     if (!videoId) return;
-
     const fetchAll = async () => {
       setLoading(true);
       setError(null);
@@ -556,10 +709,8 @@ export default function Watch() {
         const data = Array.isArray(res.data?.data)
           ? res.data.data[0]
           : res.data?.data;
-
         if (!data) throw new Error("Video not found");
 
-        // normalize owner — unwrap array if backend still returns it as array
         const owner = Array.isArray(data.owner) ? data.owner[0] : data.owner;
         const normalizedVideo = { ...data, owner };
 
@@ -567,12 +718,10 @@ export default function Watch() {
         setLikesCount(data.likesCount ?? 0);
         setSubscribersCount(owner?.subscribersCount ?? 0);
 
-        // restore sub from localStorage
         if (isAuthenticated && currentUser?._id && owner?._id) {
           setSubscribed(lsGet(`subbed_${currentUser._id}_${owner._id}`, false));
         }
 
-        // check liked status via getLikedVideos
         if (isAuthenticated) {
           try {
             const likeRes = await axios.get("/api/v2/likes/videos");
@@ -584,9 +733,8 @@ export default function Watch() {
             if (currentUser?._id)
               lsSet(`liked_${currentUser._id}_${videoId}`, isLiked);
           } catch {
-            if (currentUser?._id) {
+            if (currentUser?._id)
               setLiked(lsGet(`liked_${currentUser._id}_${videoId}`, false));
-            }
           }
         }
       } catch (err) {
@@ -597,17 +745,14 @@ export default function Watch() {
         setLoading(false);
       }
     };
-
     fetchAll();
   }, [videoId, isAuthenticated, currentUser?._id]);
 
-  // ── Increment views ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!videoId) return;
     axios.post(`/api/v2/videos/${videoId}/view`).catch(() => {});
   }, [videoId]);
 
-  // ── Fetch suggested ────────────────────────────────────────────────────────
   useEffect(() => {
     if (!videoId) return;
     const fetchSuggested = async () => {
@@ -627,31 +772,25 @@ export default function Watch() {
     fetchSuggested();
   }, [videoId]);
 
-  // ── Toggle like ────────────────────────────────────────────────────────────
   const handleToggleLike = async () => {
     if (!isAuthenticated) {
       showToast("Sign in to like videos", "info");
       return;
     }
     if (likeLoading) return;
-
     const prevLiked = liked;
     const prevCount = likesCount;
     const newLiked = !liked;
-
     setLiked(newLiked);
     setLikesCount((c) => (newLiked ? c + 1 : Math.max(0, c - 1)));
     setLikeLoading(true);
-
     try {
       const res = await axios.post(`/api/v2/likes/toggle/v/${videoId}`);
       const data = res.data?.data ?? {};
       const isNowLiked = data.VideoLiked ?? data.videoLiked ?? newLiked;
-
       setLiked(isNowLiked);
-      if (isNowLiked !== newLiked) {
+      if (isNowLiked !== newLiked)
         setLikesCount((c) => (isNowLiked ? c + 1 : Math.max(0, c - 1)));
-      }
       if (currentUser?._id)
         lsSet(`liked_${currentUser._id}_${videoId}`, isNowLiked);
       showToast(
@@ -670,32 +809,26 @@ export default function Watch() {
     }
   };
 
-  // ── Toggle subscribe ───────────────────────────────────────────────────────
   const handleToggleSubscribe = async () => {
     if (!isAuthenticated) {
       showToast("Sign in to subscribe", "info");
       return;
     }
     if (subLoading || !video?.owner?._id) return;
-
     const prevSub = subscribed;
     const prevCount = subscribersCount;
     const newSub = !subscribed;
-
     setSubscribed(newSub);
     setSubscribersCount((c) => (newSub ? c + 1 : Math.max(0, c - 1)));
     setSubLoading(true);
-
     try {
       const res = await axios.post(
         `/api/v2/subscriptions/c/${video.owner._id}`,
       );
       const isNowSubbed = res.data?.data?.subscribed ?? newSub;
-
       setSubscribed(isNowSubbed);
-      if (isNowSubbed !== newSub) {
+      if (isNowSubbed !== newSub)
         setSubscribersCount((c) => (isNowSubbed ? c + 1 : Math.max(0, c - 1)));
-      }
       if (currentUser?._id)
         lsSet(`subbed_${currentUser._id}_${video.owner._id}`, isNowSubbed);
       showToast(
@@ -705,7 +838,6 @@ export default function Watch() {
         "success",
       );
     } catch (err) {
-      console.log("Sub error:", err.response?.data);
       setSubscribed(prevSub);
       setSubscribersCount(prevCount);
       showToast(
@@ -717,7 +849,6 @@ export default function Watch() {
     }
   };
 
-  // ── Share ──────────────────────────────────────────────────────────────────
   const handleShare = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -729,7 +860,6 @@ export default function Watch() {
     }
   };
 
-  // ─────────────────────────────────────────────────────────────────────────
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -750,7 +880,6 @@ export default function Watch() {
   const descLines = video?.description?.split("\n") ?? [];
   const isLongDesc = (video?.description?.length ?? 0) > 200;
 
-  // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-full bg-[#0a0a0f] p-4 sm:p-6">
       {toast && (
@@ -824,11 +953,7 @@ export default function Watch() {
                     <button
                       onClick={handleToggleLike}
                       disabled={likeLoading}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all duration-200 disabled:opacity-60 active:scale-95 ${
-                        liked
-                          ? "bg-indigo-500/15 border-indigo-500/40 text-indigo-300"
-                          : "bg-white/4 border-white/8 text-slate-400 hover:text-slate-200 hover:border-white/[0.14]"
-                      }`}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-all duration-200 disabled:opacity-60 active:scale-95 ${liked ? "bg-indigo-500/15 border-indigo-500/40 text-indigo-300" : "bg-white/4 border-white/8 text-slate-400 hover:text-slate-200 hover:border-white/[0.14]"}`}
                     >
                       <ThumbsUp
                         size={15}
@@ -841,7 +966,6 @@ export default function Watch() {
                           ? "Liked"
                           : "Like"}
                     </button>
-
                     <button
                       onClick={handleShare}
                       className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white/4 border border-white/8 text-slate-400 hover:text-slate-200 hover:border-white/[0.14] transition-all duration-200 active:scale-95"
@@ -880,7 +1004,6 @@ export default function Watch() {
                         )}
                       </div>
                     </Link>
-
                     <div className="flex-1 min-w-0">
                       <Link to={`/channel/${video.owner?.username}`}>
                         <p className="text-sm font-semibold text-slate-100 hover:text-white transition-colors truncate">
@@ -899,15 +1022,10 @@ export default function Watch() {
                         )}
                       </p>
                     </div>
-
                     <button
                       onClick={handleToggleSubscribe}
                       disabled={subLoading}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 disabled:opacity-60 active:scale-95 ${
-                        subscribed
-                          ? "bg-white/[0.07] border border-white/12 text-slate-300 hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-400"
-                          : "bg-white text-[#0a0a0f] hover:bg-slate-100"
-                      }`}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 disabled:opacity-60 active:scale-95 ${subscribed ? "bg-white/[0.07] border border-white/12 text-slate-300 hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-400" : "bg-white text-[#0a0a0f] hover:bg-slate-100"}`}
                     >
                       {subscribed ? (
                         <>
@@ -926,9 +1044,7 @@ export default function Watch() {
                   {/* Description */}
                   <div className="bg-white/3 border border-white/6 rounded-2xl p-4">
                     <div
-                      className={`text-sm text-slate-400 leading-relaxed space-y-1 overflow-hidden transition-all duration-300 ${
-                        descExpanded || !isLongDesc ? "max-h-500" : "max-h-20"
-                      }`}
+                      className={`text-sm text-slate-400 leading-relaxed space-y-1 overflow-hidden transition-all duration-300 ${descExpanded || !isLongDesc ? "max-h-500" : "max-h-20"}`}
                     >
                       {descLines.length > 0 ? (
                         descLines.map((line, i) => (
@@ -959,6 +1075,9 @@ export default function Watch() {
                       </button>
                     )}
                   </div>
+
+                  {/* ── AI Insights Panel ── */}
+                  <AiInsights video={video} videoRef={videoRef} />
 
                   {/* ── Comments Section ── */}
                   <div className="bg-white/2 border border-white/6 rounded-2xl p-5">
