@@ -24,24 +24,22 @@ import {
   Loader2,
   Clock,
   AlertCircle,
+  Bot,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Toast
 // ─────────────────────────────────────────────────────────────────────────────
-
 function Toast({ message, type = "info", onClose }) {
   useEffect(() => {
     const t = setTimeout(onClose, 3000);
     return () => clearTimeout(t);
   }, [onClose]);
-
   const styles = {
     success: "bg-emerald-950 border-emerald-500/30 text-emerald-300",
-    error: "bg-rose-950   border-rose-500/30   text-rose-300",
-    info: "bg-slate-900  border-white/10       text-slate-300",
+    error: "bg-rose-950 border-rose-500/30 text-rose-300",
+    info: "bg-slate-900 border-white/10 text-slate-300",
   };
-
   return (
     <div
       className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-2xl border text-sm font-medium ${styles[type]}`}
@@ -56,7 +54,6 @@ function Toast({ message, type = "info", onClose }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Skeletons
 // ─────────────────────────────────────────────────────────────────────────────
-
 function PlayerSkeleton() {
   return (
     <div className="space-y-4 animate-pulse">
@@ -72,14 +69,13 @@ function PlayerSkeleton() {
         <div className="w-10 h-10 rounded-full bg-white/5" />
         <div className="flex-1 space-y-1.5">
           <div className="h-3.5 bg-white/5 rounded w-32" />
-          <div className="h-3   bg-white/4 rounded w-20" />
+          <div className="h-3 bg-white/4 rounded w-20" />
         </div>
         <div className="h-8 w-28 bg-white/5 rounded-xl" />
       </div>
     </div>
   );
 }
-
 function SuggestedSkeleton() {
   return (
     <div className="space-y-3 animate-pulse">
@@ -99,7 +95,6 @@ function SuggestedSkeleton() {
     </div>
   );
 }
-
 function CommentSkeleton() {
   return (
     <div className="space-y-4 animate-pulse">
@@ -120,11 +115,6 @@ function CommentSkeleton() {
 // ─────────────────────────────────────────────────────────────────────────────
 // AI Insights Panel
 // ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Converts "MM:SS" timestamp string to total seconds for seeking the video.
- * Handles edge cases like missing colons or non-numeric values.
- */
 function timeToSeconds(timeStr) {
   if (!timeStr) return 0;
   const parts = timeStr.split(":").map(Number);
@@ -134,30 +124,22 @@ function timeToSeconds(timeStr) {
 }
 
 function AiInsights({ video, videoRef }) {
-  const [activeTab, setActiveTab] = useState("summary"); // "summary" | "chapters"
-
+  const [activeTab, setActiveTab] = useState("summary");
   const { aiStatus, aiSummary, aiChapters } = video;
 
-  // Seek the video player to the chapter's timestamp
   const handleChapterClick = (timeStr) => {
     const seconds = timeToSeconds(timeStr);
     if (videoRef?.current) {
       videoRef.current.currentTime = seconds;
       videoRef.current.play().catch(() => {});
-      // Scroll to player smoothly
       videoRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   };
 
-  // ── PROCESSING state ──────────────────────────────────────────────────────
   if (aiStatus === "PROCESSING" || aiStatus === "PENDING") {
     return (
       <div className="relative overflow-hidden bg-white/2 border border-white/6 rounded-2xl p-5">
-        {/* Animated shimmer bar at top */}
-        <div className="absolute top-0 left-0 right-0 h-px">
-          <div className="h-full bg-gradient-to-r from-transparent via-indigo-500/60 to-transparent animate-[shimmer_2s_ease-in-out_infinite]" />
-        </div>
-
+        <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-indigo-500/60 to-transparent animate-pulse" />
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
             <Loader2 size={15} className="text-indigo-400 animate-spin" />
@@ -175,7 +157,6 @@ function AiInsights({ video, videoRef }) {
     );
   }
 
-  // ── FAILED state ──────────────────────────────────────────────────────────
   if (aiStatus === "FAILED") {
     return (
       <div className="flex items-center gap-3 bg-white/2 border border-white/6 rounded-2xl p-5">
@@ -194,18 +175,14 @@ function AiInsights({ video, videoRef }) {
     );
   }
 
-  // ── No AI data yet (video uploaded before AI feature existed) ─────────────
   if (
     aiStatus !== "COMPLETED" ||
     (!aiSummary && (!aiChapters || aiChapters.length === 0))
-  ) {
+  )
     return null;
-  }
 
-  // ── COMPLETED ─────────────────────────────────────────────────────────────
   return (
     <div className="bg-white/2 border border-white/6 rounded-2xl overflow-hidden">
-      {/* Header */}
       <div className="flex items-center gap-2.5 px-5 pt-5 pb-4 border-b border-white/5">
         <div className="w-7 h-7 rounded-lg bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center shrink-0">
           <Sparkles size={13} className="text-indigo-400" />
@@ -218,27 +195,18 @@ function AiInsights({ video, videoRef }) {
         </span>
       </div>
 
-      {/* Tabs — only show if both summary and chapters exist */}
       {aiSummary && aiChapters?.length > 0 && (
         <div className="flex border-b border-white/5 px-5">
           <button
             onClick={() => setActiveTab("summary")}
-            className={`flex items-center gap-1.5 py-3 text-xs font-medium border-b-2 mr-5 transition-all duration-150 ${
-              activeTab === "summary"
-                ? "border-indigo-500 text-indigo-300"
-                : "border-transparent text-slate-500 hover:text-slate-400"
-            }`}
+            className={`flex items-center gap-1.5 py-3 text-xs font-medium border-b-2 mr-5 transition-all duration-150 ${activeTab === "summary" ? "border-indigo-500 text-indigo-300" : "border-transparent text-slate-500 hover:text-slate-400"}`}
           >
             <BookOpen size={12} />
             Summary
           </button>
           <button
             onClick={() => setActiveTab("chapters")}
-            className={`flex items-center gap-1.5 py-3 text-xs font-medium border-b-2 transition-all duration-150 ${
-              activeTab === "chapters"
-                ? "border-indigo-500 text-indigo-300"
-                : "border-transparent text-slate-500 hover:text-slate-400"
-            }`}
+            className={`flex items-center gap-1.5 py-3 text-xs font-medium border-b-2 transition-all duration-150 ${activeTab === "chapters" ? "border-indigo-500 text-indigo-300" : "border-transparent text-slate-500 hover:text-slate-400"}`}
           >
             <ListVideo size={12} />
             Chapters
@@ -249,14 +217,10 @@ function AiInsights({ video, videoRef }) {
         </div>
       )}
 
-      {/* Content */}
       <div className="px-5 py-4">
-        {/* Summary tab — or summary-only if no chapters */}
         {(activeTab === "summary" || !aiChapters?.length) && aiSummary && (
           <p className="text-sm text-slate-400 leading-relaxed">{aiSummary}</p>
         )}
-
-        {/* Chapters tab — or chapters-only if no summary */}
         {(activeTab === "chapters" || !aiSummary) && aiChapters?.length > 0 && (
           <div className="space-y-1">
             {aiChapters.map((chapter, i) => (
@@ -265,17 +229,12 @@ function AiInsights({ video, videoRef }) {
                 onClick={() => handleChapterClick(chapter.time)}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-white/5 active:bg-white/8 transition-all duration-150 group"
               >
-                {/* Chapter index dot */}
                 <span className="shrink-0 w-5 h-5 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-[10px] font-bold text-indigo-400 group-hover:bg-indigo-500/20 transition-colors">
                   {i + 1}
                 </span>
-
-                {/* Title */}
                 <span className="flex-1 text-xs font-medium text-slate-300 group-hover:text-slate-100 transition-colors truncate">
                   {chapter.title}
                 </span>
-
-                {/* Timestamp pill */}
                 <span className="shrink-0 flex items-center gap-1 text-[11px] font-mono font-medium text-indigo-400/80 bg-indigo-500/8 border border-indigo-500/15 px-2 py-0.5 rounded-lg group-hover:bg-indigo-500/15 group-hover:text-indigo-300 transition-all">
                   <Clock size={10} strokeWidth={2} />
                   {chapter.time}
@@ -290,13 +249,215 @@ function AiInsights({ video, videoRef }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Single comment row
+// RAG Chat Panel
 // ─────────────────────────────────────────────────────────────────────────────
+function ChatMessage({ role, text }) {
+  const isUser = role === "user";
+  return (
+    <div className={`flex gap-2.5 ${isUser ? "flex-row-reverse" : ""}`}>
+      {/* Avatar */}
+      <div
+        className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center mt-0.5 ${isUser ? "bg-indigo-500/20 border border-indigo-500/30" : "bg-white/5 border border-white/10"}`}
+      >
+        {isUser ? (
+          <User size={13} className="text-indigo-300" />
+        ) : (
+          <Bot size={13} className="text-slate-400" />
+        )}
+      </div>
+      {/* Bubble */}
+      <div
+        className={`max-w-[80%] px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${isUser ? "bg-indigo-600/25 border border-indigo-500/25 text-slate-200 rounded-tr-sm" : "bg-white/4 border border-white/8 text-slate-300 rounded-tl-sm"}`}
+      >
+        {text}
+      </div>
+    </div>
+  );
+}
 
+function AiChatPanel({ videoId, aiStatus, isAuthenticated }) {
+  const [messages, setMessages] = useState([]); // { role: "user"|"model", text: string }
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const bottomRef = useRef(null);
+  const inputRef = useRef(null);
+
+  // Auto-scroll to bottom on new messages
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
+
+  const handleSend = async () => {
+    const question = input.trim();
+    if (!question || loading) return;
+
+    setInput("");
+    setError("");
+
+    // Optimistically add user message
+    const userMsg = { role: "user", text: question };
+    setMessages((prev) => [...prev, userMsg]);
+    setLoading(true);
+
+    try {
+      // Convert messages to Gemini history format (exclude the last user msg — it's the current question)
+      const history = messages.map((m) => ({
+        role: m.role,
+        parts: [{ text: m.text }],
+      }));
+
+      const res = await axios.post(`/api/v2/chat/${videoId}`, {
+        message: question,
+        history,
+      });
+      const answer = res.data?.data?.answer ?? "No answer returned.";
+      setMessages((prev) => [...prev, { role: "model", text: answer }]);
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Failed to get an answer. Try again.",
+      );
+      // Remove the optimistic user message on failure
+      setMessages((prev) => prev.slice(0, -1));
+      setInput(question);
+    } finally {
+      setLoading(false);
+      inputRef.current?.focus();
+    }
+  };
+
+  // Don't render if AI isn't ready
+  if (aiStatus !== "COMPLETED") return null;
+
+  return (
+    <div className="bg-white/2 border border-white/6 rounded-2xl overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-2.5 px-5 pt-5 pb-4 border-b border-white/5">
+        <div className="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center shrink-0">
+          <Bot size={13} className="text-emerald-400" />
+        </div>
+        <div>
+          <span className="text-sm font-semibold text-slate-200">
+            Ask this video
+          </span>
+          <p className="text-[11px] text-slate-600 mt-0.5">
+            Ask anything about the content
+          </p>
+        </div>
+        <span className="ml-auto text-[10px] font-medium text-emerald-400/70 bg-emerald-500/10 border border-emerald-500/15 px-2 py-0.5 rounded-full">
+          RAG · Gemini
+        </span>
+      </div>
+
+      {/* Message list */}
+      <div className="px-5 py-4 space-y-4 max-h-80 overflow-y-auto scrollbar-thin">
+        {messages.length === 0 && (
+          <div className="py-6 text-center">
+            <Bot size={22} className="text-slate-700 mx-auto mb-2" />
+            <p className="text-xs text-slate-600">
+              Ask anything about this video.
+            </p>
+            <div className="flex flex-wrap gap-2 justify-center mt-3">
+              {[
+                "What is this video about?",
+                "Key takeaways?",
+                "Summarize in one sentence",
+              ].map((q) => (
+                <button
+                  key={q}
+                  onClick={() => {
+                    setInput(q);
+                    inputRef.current?.focus();
+                  }}
+                  className="text-[11px] px-2.5 py-1 rounded-lg bg-white/4 border border-white/8 text-slate-500 hover:text-slate-300 hover:border-white/14 transition-all"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {messages.map((msg, i) => (
+          <ChatMessage key={i} role={msg.role} text={msg.text} />
+        ))}
+
+        {/* Typing indicator */}
+        {loading && (
+          <div className="flex gap-2.5">
+            <div className="shrink-0 w-7 h-7 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mt-0.5">
+              <Bot size={13} className="text-slate-400" />
+            </div>
+            <div className="bg-white/4 border border-white/8 rounded-2xl rounded-tl-sm px-3.5 py-3 flex items-center gap-1">
+              {[0, 1, 2].map((i) => (
+                <span
+                  key={i}
+                  className="w-1.5 h-1.5 rounded-full bg-slate-500 animate-bounce"
+                  style={{ animationDelay: `${i * 150}ms` }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <p className="text-xs text-rose-400 flex items-center gap-1.5">
+            <X size={11} />
+            {error}
+          </p>
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Input */}
+      <div className="px-5 pb-5 pt-2 border-t border-white/5">
+        {!isAuthenticated ? (
+          <p className="text-xs text-slate-600 text-center py-2">
+            <Link
+              to="/login"
+              className="text-indigo-400 hover:text-indigo-300 transition-colors"
+            >
+              Sign in
+            </Link>{" "}
+            to chat with this video
+          </p>
+        ) : (
+          <div className="flex gap-2">
+            <input
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              placeholder="Ask a question…"
+              maxLength={500}
+              disabled={loading}
+              className="flex-1 bg-white/3 border border-white/8 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 outline-none focus:border-indigo-500/50 focus:bg-indigo-500/5 transition-all duration-200 disabled:opacity-50"
+            />
+            <button
+              onClick={handleSend}
+              disabled={!input.trim() || loading}
+              className="shrink-0 w-10 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-200 active:scale-95"
+            >
+              <Send size={14} className="text-white" />
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Comment Row
+// ─────────────────────────────────────────────────────────────────────────────
 function CommentRow({ comment, currentUserId, onDelete }) {
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-
   const owner = comment.owner ?? {};
   const initial = owner.username?.[0]?.toUpperCase() || "?";
   const isOwner = currentUserId && owner._id?.toString() === currentUserId;
@@ -331,7 +492,6 @@ function CommentRow({ comment, currentUserId, onDelete }) {
           </span>
         )}
       </div>
-
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs font-semibold text-slate-300">
@@ -345,7 +505,6 @@ function CommentRow({ comment, currentUserId, onDelete }) {
           {comment.content}
         </p>
       </div>
-
       {isOwner && (
         <div className="shrink-0 flex items-start pt-0.5">
           {confirmDelete ? (
@@ -380,9 +539,8 @@ function CommentRow({ comment, currentUserId, onDelete }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Comments section
+// Comments Section
 // ─────────────────────────────────────────────────────────────────────────────
-
 function CommentsSection({ videoId, isAuthenticated, currentUser }) {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -427,7 +585,6 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
     if (!content.trim() || submitting) return;
     setSubmitting(true);
     setError("");
-
     const optimistic = {
       _id: `temp_${Date.now()}`,
       content: content.trim(),
@@ -438,12 +595,10 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
         avatar: currentUser?.avatar,
       },
     };
-
     setComments((prev) => [optimistic, ...prev]);
     setTotalComments((c) => c + 1);
     setContent("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
-
     try {
       const res = await axios.post(`/api/v2/comments/${videoId}`, {
         content: optimistic.content,
@@ -485,7 +640,6 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
             : "Comments"}
         </h3>
       </div>
-
       {isAuthenticated ? (
         <form onSubmit={handleSubmit} className="flex gap-3">
           <div className="shrink-0 w-8 h-8 rounded-full overflow-hidden bg-linear-to-br from-indigo-500 to-violet-600 flex items-center justify-center mt-1">
@@ -554,13 +708,11 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
           </p>
         </div>
       )}
-
       {error && (
         <p className="text-xs text-rose-400 flex items-center gap-1.5">
           <X size={12} /> {error}
         </p>
       )}
-
       {loading ? (
         <CommentSkeleton />
       ) : comments.length === 0 ? (
@@ -597,9 +749,8 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Suggested card
+// Suggested Card
 // ─────────────────────────────────────────────────────────────────────────────
-
 function SuggestedCard({ video }) {
   if (!video) return null;
   const { _id, thumbnail, title, duration, views, createdAt, owner } = video;
@@ -642,7 +793,6 @@ function SuggestedCard({ video }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // localStorage helpers
 // ─────────────────────────────────────────────────────────────────────────────
-
 const lsGet = (key, fallback) => {
   try {
     const v = localStorage.getItem(key);
@@ -660,8 +810,9 @@ const lsSet = (key, value) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Main Watch component
+// Main Watch Component
 // ─────────────────────────────────────────────────────────────────────────────
+const POLL_INTERVAL_MS = 5000; // re-fetch video every 5s while AI is processing
 
 export default function Watch() {
   const { videoId } = useParams();
@@ -688,22 +839,23 @@ export default function Watch() {
   const [suggestedLoading, setSuggestedLoading] = useState(true);
 
   const videoRef = useRef(null);
+  const pollRef = useRef(null); // holds the setInterval id
   const showToast = useCallback(
     (message, type = "info") => setToast({ message, type }),
     [],
   );
 
-  // ── Fetch video + like status ──────────────────────────────────────────────
-  useEffect(() => {
-    if (!videoId) return;
-    const fetchAll = async () => {
-      setLoading(true);
-      setError(null);
-      setVideo(null);
-      setDescExpanded(false);
-      setLiked(false);
-      setSubscribed(false);
-
+  // ── Fetch video ────────────────────────────────────────────────────────────
+  const fetchVideo = useCallback(
+    async ({ isInitial = false } = {}) => {
+      if (isInitial) {
+        setLoading(true);
+        setError(null);
+        setVideo(null);
+        setDescExpanded(false);
+        setLiked(false);
+        setSubscribed(false);
+      }
       try {
         const res = await axios.get(`/api/v2/videos/${videoId}`);
         const data = Array.isArray(res.data?.data)
@@ -715,38 +867,75 @@ export default function Watch() {
         const normalizedVideo = { ...data, owner };
 
         setVideo(normalizedVideo);
-        setLikesCount(data.likesCount ?? 0);
-        setSubscribersCount(owner?.subscribersCount ?? 0);
 
-        if (isAuthenticated && currentUser?._id && owner?._id) {
-          setSubscribed(lsGet(`subbed_${currentUser._id}_${owner._id}`, false));
-        }
-
-        if (isAuthenticated) {
-          try {
-            const likeRes = await axios.get("/api/v2/likes/videos");
-            const likedList = likeRes.data?.data ?? [];
-            const isLiked = likedList.some(
-              (item) => item?.video?._id?.toString() === videoId,
+        if (isInitial) {
+          setLikesCount(data.likesCount ?? 0);
+          setSubscribersCount(owner?.subscribersCount ?? 0);
+          if (isAuthenticated && currentUser?._id && owner?._id)
+            setSubscribed(
+              lsGet(`subbed_${currentUser._id}_${owner._id}`, false),
             );
-            setLiked(isLiked);
-            if (currentUser?._id)
-              lsSet(`liked_${currentUser._id}_${videoId}`, isLiked);
-          } catch {
-            if (currentUser?._id)
-              setLiked(lsGet(`liked_${currentUser._id}_${videoId}`, false));
+          if (isAuthenticated) {
+            try {
+              const likeRes = await axios.get("/api/v2/likes/videos");
+              const likedList = likeRes.data?.data ?? [];
+              const isLiked = likedList.some(
+                (item) => item?.video?._id?.toString() === videoId,
+              );
+              setLiked(isLiked);
+              if (currentUser?._id)
+                lsSet(`liked_${currentUser._id}_${videoId}`, isLiked);
+            } catch {
+              if (currentUser?._id)
+                setLiked(lsGet(`liked_${currentUser._id}_${videoId}`, false));
+            }
           }
         }
+
+        // Stop polling once AI reaches a terminal state
+        return normalizedVideo.aiStatus;
       } catch (err) {
-        setError(
-          err.response?.data?.message || err.message || "Video not found.",
-        );
+        if (isInitial)
+          setError(
+            err.response?.data?.message || err.message || "Video not found.",
+          );
       } finally {
-        setLoading(false);
+        if (isInitial) setLoading(false);
+      }
+    },
+    [videoId, isAuthenticated, currentUser?._id],
+  );
+
+  // ── Initial fetch + start polling if AI is still processing ───────────────
+  useEffect(() => {
+    if (!videoId) return;
+
+    const init = async () => {
+      const aiStatus = await fetchVideo({ isInitial: true });
+
+      // Start polling only if AI is not yet done
+      if (aiStatus === "PROCESSING" || aiStatus === "PENDING") {
+        pollRef.current = setInterval(async () => {
+          const status = await fetchVideo({ isInitial: false });
+          // Stop polling when AI reaches a terminal state
+          if (status === "COMPLETED" || status === "FAILED") {
+            clearInterval(pollRef.current);
+            pollRef.current = null;
+          }
+        }, POLL_INTERVAL_MS);
       }
     };
-    fetchAll();
-  }, [videoId, isAuthenticated, currentUser?._id]);
+
+    init();
+
+    return () => {
+      // Always clean up the interval when videoId changes or component unmounts
+      if (pollRef.current) {
+        clearInterval(pollRef.current);
+        pollRef.current = null;
+      }
+    };
+  }, [videoId, fetchVideo]);
 
   useEffect(() => {
     if (!videoId) return;
@@ -761,8 +950,9 @@ export default function Watch() {
         const res = await axios.get("/api/v2/videos", {
           params: { page: 1, limit: 10, sortBy: "views", sortType: "desc" },
         });
-        const docs = res.data?.data?.docs ?? [];
-        setSuggested(docs.filter((v) => v._id !== videoId));
+        setSuggested(
+          (res.data?.data?.docs ?? []).filter((v) => v._id !== videoId),
+        );
       } catch {
         setSuggested([]);
       } finally {
@@ -889,7 +1079,6 @@ export default function Watch() {
           onClose={() => setToast(null)}
         />
       )}
-
       <div className="max-w-350 mx-auto">
         <div className="flex flex-col xl:flex-row gap-6">
           {/* ── MAIN COLUMN ── */}
@@ -948,7 +1137,7 @@ export default function Watch() {
                     </div>
                   </div>
 
-                  {/* Action row */}
+                  {/* Actions */}
                   <div className="flex items-center gap-2 flex-wrap">
                     <button
                       onClick={handleToggleLike}
@@ -1076,10 +1265,17 @@ export default function Watch() {
                     )}
                   </div>
 
-                  {/* ── AI Insights Panel ── */}
+                  {/* ── AI Insights ── */}
                   <AiInsights video={video} videoRef={videoRef} />
 
-                  {/* ── Comments Section ── */}
+                  {/* ── AI Chat ── */}
+                  <AiChatPanel
+                    videoId={videoId}
+                    aiStatus={video.aiStatus}
+                    isAuthenticated={isAuthenticated}
+                  />
+
+                  {/* ── Comments ── */}
                   <div className="bg-white/2 border border-white/6 rounded-2xl p-5">
                     <CommentsSection
                       videoId={videoId}
