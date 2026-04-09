@@ -14,6 +14,7 @@ import {
   Twitter,
   Upload,
   Info,
+  ListVideo,
 } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -27,6 +28,7 @@ const ROUTE_MAP = {
   subscriptions: "/subscriptions",
   tweets: "/tweets",
   history: "/history",
+  playlists: "/playlists",
   upload: "/upload",
   dashboard: "/dashboard",
   healthcheck: "/healthcheck",
@@ -42,6 +44,7 @@ const PROTECTED = new Set([
   "subscriptions",
   "tweets",
   "history",
+  "playlists",
   "upload",
   "dashboard",
   "notifications",
@@ -54,6 +57,7 @@ const PRIMARY_NAV = [
   { id: "subscriptions", label: "Subscriptions", icon: Rss },
   { id: "tweets", label: "Tweets", icon: Twitter },
   { id: "history", label: "History", icon: History },
+  { id: "playlists", label: "Playlists", icon: ListVideo },
   { id: "upload", label: "Upload", icon: Upload },
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "healthcheck", label: "Healthcheck", icon: Activity },

@@ -25,6 +25,8 @@ import {
   Clock,
   AlertCircle,
   Bot,
+  Bookmark,
+  Plus,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -52,6 +54,193 @@ function Toast({ message, type = "info", onClose }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Save to Playlist Modal
+// ─────────────────────────────────────────────────────────────────────────────
+function SaveToPlaylistModal({ videoId, currentUserId, onClose }) {
+  const [playlists, setPlaylists] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(null); // playlistId being toggled
+  const [saved, setSaved] = useState({}); // { playlistId: boolean }
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newDesc, setNewDesc] = useState("");
+  const [createLoading, setCreateLoading] = useState(false);
+
+  useEffect(() => {
+    if (!currentUserId) return;
+    const fetch = async () => {
+      try {
+        const res = await axios.get(`/api/v2/playlists/user/${currentUserId}`);
+        const data = res.data?.data ?? [];
+        setPlaylists(data);
+        // Check which playlists already contain this video
+        const savedMap = {};
+        data.forEach((p) => {
+          const ids = (p.videos || []).map((v) =>
+            (typeof v === "object" ? v._id : v)?.toString(),
+          );
+          savedMap[p._id] = ids.includes(videoId?.toString());
+        });
+        setSaved(savedMap);
+      } catch {
+        /* silent */
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, [currentUserId, videoId]);
+
+  const handleToggle = async (playlistId) => {
+    if (saving) return;
+    setSaving(playlistId);
+    const isCurrentlySaved = saved[playlistId];
+    try {
+      if (isCurrentlySaved) {
+        await axios.patch(`/api/v2/playlists/remove/${videoId}/${playlistId}`);
+      } else {
+        await axios.patch(`/api/v2/playlists/add/${videoId}/${playlistId}`);
+      }
+      setSaved((prev) => ({ ...prev, [playlistId]: !isCurrentlySaved }));
+    } catch {
+      /* silent */
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    if (!newName.trim() || !newDesc.trim()) return;
+    setCreateLoading(true);
+    try {
+      const res = await axios.post("/api/v2/playlists", {
+        name: newName.trim(),
+        description: newDesc.trim(),
+      });
+      const created = res.data?.data;
+      setPlaylists((prev) => [created, ...prev]);
+      setSaved((prev) => ({ ...prev, [created._id]: false }));
+      setNewName("");
+      setNewDesc("");
+      setCreating(false);
+    } catch {
+      /* silent */
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
+      <div
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div className="relative w-full max-w-sm bg-[#0f1117] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/6">
+          <h2 className="text-sm font-bold text-slate-100">Save to playlist</h2>
+          <button
+            onClick={onClose}
+            className="text-slate-600 hover:text-slate-300 transition-colors p-1 rounded-lg hover:bg-white/5"
+          >
+            <X size={15} />
+          </button>
+        </div>
+
+        {/* Playlist list */}
+        <div className="max-h-64 overflow-y-auto">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 size={18} className="text-slate-600 animate-spin" />
+            </div>
+          ) : playlists.length === 0 && !creating ? (
+            <p className="text-xs text-slate-600 text-center py-8">
+              No playlists yet. Create one below.
+            </p>
+          ) : (
+            <div className="p-2 space-y-0.5">
+              {playlists.map((p) => (
+                <button
+                  key={p._id}
+                  onClick={() => handleToggle(p._id)}
+                  disabled={saving === p._id}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-all duration-150 group"
+                >
+                  {/* Checkbox */}
+                  <div
+                    className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all ${saved[p._id] ? "bg-indigo-500 border-indigo-500" : "border-white/20 group-hover:border-white/40"}`}
+                  >
+                    {saved[p._id] && (
+                      <Check size={10} strokeWidth={3} className="text-white" />
+                    )}
+                    {saving === p._id && (
+                      <Loader2 size={10} className="text-white animate-spin" />
+                    )}
+                  </div>
+                  <span className="text-sm text-slate-300 text-left truncate">
+                    {p.name}
+                  </span>
+                  <span className="ml-auto text-[11px] text-slate-600 shrink-0">
+                    {p.videos?.length ?? 0}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Create new */}
+        <div className="border-t border-white/6 p-4">
+          {!creating ? (
+            <button
+              onClick={() => setCreating(true)}
+              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all"
+            >
+              <Plus size={14} strokeWidth={2} />
+              New playlist
+            </button>
+          ) : (
+            <form onSubmit={handleCreate} className="space-y-2">
+              <input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Playlist name"
+                className="w-full bg-white/4 border border-white/8 rounded-xl px-3 py-2 text-sm text-slate-200 placeholder-slate-600 outline-none focus:border-indigo-500/50 transition-all"
+              />
+              <input
+                value={newDesc}
+                onChange={(e) => setNewDesc(e.target.value)}
+                placeholder="Description"
+                className="w-full bg-white/4 border border-white/8 rounded-xl px-3 py-2 text-sm text-slate-200 placeholder-slate-600 outline-none focus:border-indigo-500/50 transition-all"
+              />
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCreating(false)}
+                  className="flex-1 py-2 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-300 border border-white/8 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={createLoading || !newName.trim() || !newDesc.trim()}
+                  className="flex-1 py-2 rounded-xl text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 transition-all"
+                >
+                  {createLoading ? "Creating…" : "Create"}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Skeletons
 // ─────────────────────────────────────────────────────────────────────────────
 function PlayerSkeleton() {
@@ -834,6 +1023,7 @@ export default function Watch() {
   const [descExpanded, setDescExpanded] = useState(false);
   const [toast, setToast] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
 
   const [suggested, setSuggested] = useState([]);
   const [suggestedLoading, setSuggestedLoading] = useState(true);
@@ -1079,6 +1269,13 @@ export default function Watch() {
           onClose={() => setToast(null)}
         />
       )}
+      {showSaveModal && isAuthenticated && (
+        <SaveToPlaylistModal
+          videoId={videoId}
+          currentUserId={currentUser?._id}
+          onClose={() => setShowSaveModal(false)}
+        />
+      )}
       <div className="max-w-350 mx-auto">
         <div className="flex flex-col xl:flex-row gap-6">
           {/* ── MAIN COLUMN ── */}
@@ -1171,6 +1368,15 @@ export default function Watch() {
                         </>
                       )}
                     </button>
+                    {isAuthenticated && (
+                      <button
+                        onClick={() => setShowSaveModal(true)}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white/4 border border-white/8 text-slate-400 hover:text-slate-200 hover:border-white/[0.14] transition-all duration-200 active:scale-95"
+                      >
+                        <Bookmark size={14} strokeWidth={1.75} />
+                        Save
+                      </button>
+                    )}
                   </div>
 
                   {/* Channel block */}

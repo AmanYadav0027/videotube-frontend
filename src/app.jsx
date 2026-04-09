@@ -17,6 +17,7 @@ import Healthcheck from "./pages/Healthcheck";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 import Subscriptions from "./pages/Subscriptions";
+import Playlists from "./pages/Playlists.jsx";
 
 function ProtectedRoute({ children }) {
   const isAuthenticated = useSelector((s) => s.auth.isAuthenticated);
@@ -115,6 +116,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <History />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="playlists"
+            element={
+              <ProtectedRoute>
+                <Playlists />
               </ProtectedRoute>
             }
           />
