@@ -1,23 +1,28 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
-import ErrorBoundary from "./components/ErrorBoundary";
-import AppLayout from "./components/AppLayout";
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import Profile from "./pages/Profile";
-import Watch from "./pages/Watch";
-import Tweets from "./pages/Tweets";
-import Channel from "./pages/Channel";
-import UploadVideo from "./pages/UploadVideo";
-import Dashboard from "./pages/Dashboard";
-import LikedVideos from "./pages/LikedVideos";
-import History from "./pages/History";
-import Healthcheck from "./pages/Healthcheck";
-import About from "./pages/About";
-import NotFound from "./pages/NotFound";
-import Subscriptions from "./pages/Subscriptions";
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
+import AppLayout from "./components/AppLayout.jsx";
+import Home from "./pages/Home.jsx";
+import Login from "./pages/Login.jsx";
+import Register from "./pages/Register.jsx";
+import Profile from "./pages/Profile.jsx";
+import Watch from "./pages/Watch.jsx";
+import Tweets from "./pages/Tweets.jsx";
+import Channel from "./pages/Channel.jsx";
+import UploadVideo from "./pages/UploadVideo.jsx";
+import Dashboard from "./pages/Dashboard.jsx";
+import LikedVideos from "./pages/LikedVideos.jsx";
+import History from "./pages/History.jsx";
+import Healthcheck from "./pages/Healthcheck.jsx";
+import About from "./pages/About.jsx";
+import NotFound from "./pages/NotFound.jsx";
+import Subscriptions from "./pages/Subscriptions.jsx";
 import Playlists from "./pages/Playlists.jsx";
+import PlaylistDetail from "./pages/PlaylistDetail.jsx";
+import PageTransition from "./components/PageTransition.jsx";
+import Notifications from "./pages/Notifications.jsx";
+import Settings from "./pages/Settings.jsx";
+import Support from "./pages/Support.jsx";
 
 function ProtectedRoute({ children }) {
   const isAuthenticated = useSelector((s) => s.auth.isAuthenticated);
@@ -33,10 +38,12 @@ function GuestRoute({ children }) {
   return !isAuthenticated ? children : <Navigate to="/" replace />;
 }
 
-export default function App() {
+function AnimatedRoutes() {
+  const location = useLocation();
+
   return (
-    <ErrorBoundary>
-      <Routes>
+    <PageTransition>
+      <Routes location={location} key={location.pathname}>
         <Route path="/" element={<AppLayout />}>
           {/* Public */}
           <Route index element={<Home />} />
@@ -127,14 +134,47 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="playlist/:playlistId"
+            element={
+              <ProtectedRoute>
+                <PlaylistDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="notifications"
+            element={
+              <ProtectedRoute>
+                <Notifications />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="settings"
+            element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Public system */}
           <Route path="healthcheck" element={<Healthcheck />} />
+          <Route path="support" element={<Support />} />
 
           {/* 404 */}
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
+    </PageTransition>
+  );
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <AnimatedRoutes />
     </ErrorBoundary>
   );
 }

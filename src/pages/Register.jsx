@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   User,
   Mail,
@@ -11,8 +12,84 @@ import {
   Layers,
   ChevronRight,
   Upload,
+  AlertTriangle,
+  Loader2,
 } from "lucide-react";
 
+// --- Animation Config ---
+const smoothSpring = {
+  type: "spring",
+  stiffness: 400,
+  damping: 30,
+  mass: 0.8,
+};
+
+const formVariants = {
+  hidden: { opacity: 0, y: 20 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      ...smoothSpring,
+      staggerChildren: 0.05,
+      delayChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 15, scale: 0.98 },
+  show: { opacity: 1, y: 0, scale: 1, transition: smoothSpring },
+};
+
+// --- Helpers ---
+function inputCls(err) {
+  return [
+    "block w-full pl-10 pr-4 py-3.5 rounded-2xl text-sm font-medium",
+    "bg-black/20 border text-slate-100 placeholder-slate-500",
+    "focus:outline-none transition-all duration-300 shadow-inner",
+    err
+      ? "border-rose-500/50 focus:border-rose-500 focus:bg-rose-500/10 focus:shadow-[0_0_20px_rgba(244,63,94,0.15)]"
+      : "border-white/10 focus:border-indigo-500 focus:bg-indigo-500/10 hover:border-white/20 focus:shadow-[0_0_20px_rgba(99,102,241,0.15)]",
+  ].join(" ");
+}
+
+function Field({ id, label, icon: Icon, error, children, required = true }) {
+  return (
+    <motion.div variants={itemVariants} className="group relative">
+      <label
+        htmlFor={id}
+        className="block text-xs font-bold text-slate-400 mb-1.5 transition-colors duration-300 group-focus-within:text-indigo-400 ml-1"
+      >
+        {label} {required && <span className="text-rose-500">*</span>}
+      </label>
+      <div className="relative">
+        <motion.span
+          className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none group-focus-within:text-indigo-400 transition-colors duration-300"
+          animate={error ? { x: [0, -5, 5, -5, 5, 0] } : {}}
+          transition={{ duration: 0.4 }}
+        >
+          <Icon size={16} />
+        </motion.span>
+        {children}
+      </div>
+      <AnimatePresence mode="wait">
+        {error && (
+          <motion.p
+            initial={{ opacity: 0, height: 0, y: -10 }}
+            animate={{ opacity: 1, height: "auto", y: 0 }}
+            exit={{ opacity: 0, height: 0, y: -10 }}
+            className="mt-2 text-xs font-medium text-rose-400 ml-1"
+          >
+            {error}
+          </motion.p>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+// --- Main ---
 export default function Register() {
   const {
     register,
@@ -54,56 +131,95 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center px-4 py-12 relative overflow-hidden">
-      {/* ── background aurora ── */}
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-violet-600/8 rounded-full blur-3xl" />
-        <div className="absolute inset-0 bg-[linear-linear(rgba(255,255,255,0.015)_1px,transparent_1px),linear-linear(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-size[48px_48px]" />
+    <div className="min-h-screen bg-[#050505] flex items-center justify-center px-4 py-12 relative overflow-hidden selection:bg-indigo-500/30 selection:text-indigo-200">
+      {/* Ambient Background Glows */}
+      <div className="fixed inset-0 z-0 pointer-events-none flex justify-center opacity-40 mix-blend-screen">
+        <motion.div
+          animate={{
+            scale: [1, 1.2, 1],
+            rotate: [0, 90, 0],
+            opacity: [0.2, 0.4, 0.2],
+          }}
+          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+          className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[100px]"
+        />
+        <motion.div
+          animate={{
+            scale: [1, 1.5, 1],
+            rotate: [0, -90, 0],
+            opacity: [0.1, 0.3, 0.1],
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-violet-600/10 rounded-full blur-[100px]"
+        />
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
       </div>
 
-      <div className="relative w-full max-w-md">
-        {/* ── card ── */}
-        <div className="bg-[#0f1117] border border-white/[0.07] rounded-2xl shadow-2xl shadow-black/50 overflow-hidden">
-          {/* card top accent line */}
-          <div className="h-px w-full bg-linear-to-r from-transparent via-indigo-500/50 to-transparent" />
+      <motion.div
+        variants={formVariants}
+        initial="hidden"
+        animate="show"
+        className="relative w-full max-w-md z-10"
+      >
+        <div className="bg-[#0A0A0A]/80 backdrop-blur-2xl border border-white/[0.05] rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] overflow-hidden relative">
+          {/* Animated Top Line */}
+          <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent" />
 
-          <div className="px-8 pt-8 pb-10">
-            {/* ── header ── */}
-            <div className="flex flex-col items-center mb-8">
-              <span className="w-10 h-10 rounded-xl bg-linear-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/25 mb-4">
+          {/* Top subtle glow */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-32 bg-indigo-500/10 blur-[50px] pointer-events-none" />
+
+          <div className="px-8 pt-10 pb-8 relative z-10">
+            {/* Header */}
+            <motion.div
+              variants={itemVariants}
+              className="flex flex-col items-center mb-8 text-center"
+            >
+              <motion.div
+                whileHover={{ rotate: 90, scale: 1.1 }}
+                transition={{ type: "spring", stiffness: 200, damping: 10 }}
+                className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/25 mb-5 border border-white/10"
+              >
                 <ChevronRight
-                  size={16}
+                  size={24}
                   strokeWidth={3}
-                  className="text-white -mr-0.5"
+                  className="text-white ml-0.5"
                 />
-              </span>
-              <h1 className="text-2xl font-bold text-slate-100 tracking-tight">
-                Create your account
+              </motion.div>
+              <h1 className="text-3xl font-black text-white tracking-tight">
+                Create Account
               </h1>
-              <p className="text-sm text-slate-500 mt-1">
+              <p className="text-sm font-medium text-slate-400 mt-2">
                 Join us — it only takes a minute
               </p>
-            </div>
+            </motion.div>
 
-            {/* ── error banner ── */}
-            {error && (
-              <div className="mb-6 px-4 py-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm text-center">
-                {error}
-              </div>
-            )}
+            {/* Error Banner */}
+            <AnimatePresence mode="wait">
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, height: "auto", scale: 1 }}
+                  exit={{ opacity: 0, height: 0, scale: 0.95 }}
+                  className="mb-6 overflow-hidden"
+                >
+                  <div className="flex items-start gap-3 px-4 py-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-bold shadow-inner">
+                    <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+                    <span>{error}</span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
-            {/* ── form ── */}
+            {/* Form */}
             <form
               onSubmit={handleSubmit(create_user)}
               className="space-y-5"
               noValidate
             >
-              {/* Full Name */}
               <Field
                 id="fullName"
                 label="Full Name"
-                icon={<User size={14} />}
+                icon={User}
                 error={errors.fullName?.message}
               >
                 <input
@@ -117,11 +233,10 @@ export default function Register() {
                 />
               </Field>
 
-              {/* Email */}
               <Field
                 id="email"
                 label="Email"
-                icon={<Mail size={14} />}
+                icon={Mail}
                 error={errors.email?.message}
               >
                 <input
@@ -133,11 +248,10 @@ export default function Register() {
                 />
               </Field>
 
-              {/* Username */}
               <Field
                 id="username"
                 label="Username"
-                icon={<AtSign size={14} />}
+                icon={AtSign}
                 error={errors.username?.message}
               >
                 <input
@@ -151,11 +265,10 @@ export default function Register() {
                 />
               </Field>
 
-              {/* Password */}
               <Field
                 id="password"
                 label="Password"
-                icon={<Lock size={14} />}
+                icon={Lock}
                 error={errors.password?.message}
               >
                 <input
@@ -174,42 +287,48 @@ export default function Register() {
               </Field>
 
               {/* Divider */}
-              <div className="flex items-center gap-3 py-1">
-                <div className="flex-1 h-px bg-white/6" />
-                <span className="text-[10px] text-slate-600 uppercase tracking-widest">
-                  Uploads
+              <motion.div
+                variants={itemVariants}
+                className="flex items-center gap-3 py-2"
+              >
+                <div className="flex-1 h-px bg-white/10" />
+                <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+                  Profile Images
                 </span>
-                <div className="flex-1 h-px bg-white/6" />
-              </div>
+                <div className="flex-1 h-px bg-white/10" />
+              </motion.div>
 
-              {/* Avatar */}
-              <div>
+              {/* Avatar Upload */}
+              <motion.div variants={itemVariants} className="group relative">
                 <label
                   htmlFor="avatar"
-                  className="block text-xs font-medium text-slate-400 mb-1.5"
+                  className="block text-xs font-bold text-slate-400 mb-1.5 transition-colors duration-300 group-focus-within:text-indigo-400 ml-1"
                 >
                   Avatar <span className="text-rose-500">*</span>
                 </label>
                 <label
                   htmlFor="avatar"
                   className={`
-                    flex items-center gap-3 w-full px-4 py-3 rounded-xl cursor-pointer
-                    border transition-all duration-200
+                    flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl cursor-pointer
+                    border transition-all duration-300 shadow-inner
                     ${
                       errors.avatar
-                        ? "bg-rose-500/5 border-rose-500/30 hover:border-rose-500/50"
-                        : "bg-white/3 border-white/8 hover:border-indigo-500/40 hover:bg-indigo-500/5"
+                        ? "bg-rose-500/10 border-rose-500/50 hover:border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.15)]"
+                        : "bg-black/20 border-white/10 hover:border-indigo-500 hover:bg-indigo-500/10 hover:shadow-[0_0_20px_rgba(99,102,241,0.15)]"
                     }
                   `}
                 >
-                  <span className="w-7 h-7 rounded-lg bg-indigo-500/15 flex items-center justify-center shrink-0">
-                    <ImagePlus size={13} className="text-indigo-400" />
+                  <span className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0 shadow-lg">
+                    <ImagePlus size={16} className="text-indigo-400" />
                   </span>
-                  <span className="text-sm text-slate-500 truncate flex-1">
-                    {avatarName || "Click to upload avatar"}
+                  <span className="text-sm font-medium text-slate-400 truncate flex-1 transition-colors group-hover:text-slate-300">
+                    {avatarName || "Select avatar image"}
                   </span>
-                  <span className="shrink-0">
-                    <Upload size={13} className="text-slate-600" />
+                  <span className="shrink-0 bg-white/5 p-1.5 rounded-lg border border-white/10 group-hover:bg-indigo-500/20 transition-colors">
+                    <Upload
+                      size={14}
+                      className="text-slate-400 group-hover:text-indigo-400"
+                    />
                   </span>
                   <input
                     id="avatar"
@@ -222,39 +341,51 @@ export default function Register() {
                     }
                   />
                 </label>
-                {errors.avatar && (
-                  <p className="mt-1.5 text-xs text-rose-400">
-                    {errors.avatar.message}
-                  </p>
-                )}
-              </div>
+                <AnimatePresence>
+                  {errors.avatar && (
+                    <motion.p
+                      initial={{ opacity: 0, height: 0, y: -10 }}
+                      animate={{ opacity: 1, height: "auto", y: 0 }}
+                      exit={{ opacity: 0, height: 0, y: -10 }}
+                      className="mt-2 text-xs font-medium text-rose-400 ml-1"
+                    >
+                      {errors.avatar.message}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              </motion.div>
 
-              {/* Cover Image */}
-              <div>
+              {/* Cover Image Upload */}
+              <motion.div variants={itemVariants} className="group relative">
                 <label
                   htmlFor="coverImage"
-                  className="block text-xs font-medium text-slate-400 mb-1.5"
+                  className="block text-xs font-bold text-slate-400 mb-1.5 transition-colors duration-300 group-focus-within:text-purple-400 ml-1"
                 >
                   Cover Image{" "}
-                  <span className="text-slate-600 font-normal">(optional)</span>
+                  <span className="text-slate-600 font-normal ml-1">
+                    (optional)
+                  </span>
                 </label>
                 <label
                   htmlFor="coverImage"
                   className="
-                    flex items-center gap-3 w-full px-4 py-3 rounded-xl cursor-pointer
-                    border border-white/8 bg-white/3
-                    hover:border-indigo-500/40 hover:bg-indigo-500/5
-                    transition-all duration-200
+                    flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl cursor-pointer
+                    border border-white/10 bg-black/20 shadow-inner
+                    hover:border-purple-500 hover:bg-purple-500/10 hover:shadow-[0_0_20px_rgba(168,85,247,0.15)]
+                    transition-all duration-300
                   "
                 >
-                  <span className="w-7 h-7 rounded-lg bg-violet-500/15 flex items-center justify-center shrink-0">
-                    <Layers size={13} className="text-violet-400" />
+                  <span className="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center shrink-0 shadow-lg">
+                    <Layers size={16} className="text-purple-400" />
                   </span>
-                  <span className="text-sm text-slate-500 truncate flex-1">
-                    {coverName || "Click to upload cover image"}
+                  <span className="text-sm font-medium text-slate-400 truncate flex-1 transition-colors group-hover:text-slate-300">
+                    {coverName || "Select cover image"}
                   </span>
-                  <span className="shrink-0">
-                    <Upload size={13} className="text-slate-600" />
+                  <span className="shrink-0 bg-white/5 p-1.5 rounded-lg border border-white/10 group-hover:bg-purple-500/20 transition-colors">
+                    <Upload
+                      size={14}
+                      className="text-slate-400 group-hover:text-purple-400"
+                    />
                   </span>
                   <input
                     id="coverImage"
@@ -267,110 +398,91 @@ export default function Register() {
                     }
                   />
                 </label>
-              </div>
+              </motion.div>
 
               {/* Submit */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="
-                  relative w-full mt-2 py-2.5 px-4 rounded-xl text-sm font-semibold text-white
-                  bg-linear-to-r from-indigo-600 to-violet-600
-                  hover:from-indigo-500 hover:to-violet-500
-                  shadow-lg shadow-indigo-500/20
-                  focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/60
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                  transition-all duration-200 active:scale-[0.99]
-                  overflow-hidden group
-                "
-              >
-                {/* shimmer on hover */}
-                <span className="absolute inset-0 bg-linear-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg
-                      className="animate-spin h-4 w-4 text-white/70"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8v8H4z"
-                      />
-                    </svg>
-                    Registering…
-                  </span>
-                ) : (
-                  "Create Account"
-                )}
-              </button>
+              <motion.div variants={itemVariants} className="pt-4">
+                <motion.button
+                  whileHover={{
+                    scale: 1.02,
+                    boxShadow: "0 10px 25px -5px rgba(99,102,241,0.4)",
+                  }}
+                  whileTap={{ scale: 0.98 }}
+                  type="submit"
+                  disabled={loading}
+                  className="relative w-full py-4 px-4 rounded-2xl text-sm font-black tracking-wide text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 bg-[length:200%_auto] hover:bg-[center_right_1rem] shadow-lg shadow-indigo-500/20 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-500/50 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-500 overflow-hidden group"
+                >
+                  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out pointer-events-none" />
+                  <AnimatePresence mode="wait">
+                    {loading ? (
+                      <motion.span
+                        key="loading"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="flex items-center justify-center gap-2"
+                      >
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{
+                            repeat: Infinity,
+                            duration: 1,
+                            ease: "linear",
+                          }}
+                        >
+                          <Loader2 size={18} />
+                        </motion.div>
+                        Creating Account...
+                      </motion.span>
+                    ) : (
+                      <motion.span
+                        key="idle"
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="block"
+                      >
+                        Create Account
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </motion.button>
+              </motion.div>
             </form>
 
-            {/* ── footer link ── */}
-            <p className="mt-6 text-center text-sm text-slate-600">
+            <motion.p
+              variants={itemVariants}
+              className="mt-8 text-center text-sm font-medium text-slate-500"
+            >
               Already have an account?{" "}
               <Link
                 to="/login"
-                className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors duration-150"
+                className="font-bold text-indigo-400 hover:text-indigo-300 transition-colors duration-150"
               >
                 Sign in
               </Link>
-            </p>
+            </motion.p>
           </div>
         </div>
 
-        {/* system status strip — matches sidebar footer */}
-        <div className="mt-4 flex items-center justify-center gap-2">
-          <span className="relative flex h-1.5 w-1.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="mt-8 flex items-center justify-center gap-3 opacity-60"
+        >
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
           </span>
-          <span className="text-[11px] text-slate-600">System Online</span>
-          <span className="text-[11px] text-slate-700 font-mono">v1.0.0</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── helpers ──────────────────────────────────────────────────────────────────
-
-function inputCls(err) {
-  return [
-    "block w-full pl-9 pr-4 py-2.5 rounded-xl text-sm",
-    "bg-white/3 border text-slate-100 placeholder-slate-600",
-    "focus:outline-none focus:ring-0 transition-all duration-200",
-    err
-      ? "border-rose-500/40 focus:border-rose-500/60 focus:bg-rose-500/5"
-      : "border-white/8 focus:border-indigo-500/50 focus:bg-indigo-500/5",
-  ].join(" ");
-}
-
-function Field({ id, label, icon, error, children }) {
-  return (
-    <div>
-      <label
-        htmlFor={id}
-        className="block text-xs font-medium text-slate-400 mb-1.5"
-      >
-        {label} <span className="text-rose-500">*</span>
-      </label>
-      <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none">
-          {icon}
-        </span>
-        {children}
-      </div>
-      {error && <p className="mt-1.5 text-xs text-rose-400">{error}</p>}
+          <span className="text-xs font-bold text-slate-400 tracking-widest uppercase">
+            Secure Connection
+          </span>
+          <span className="text-[10px] text-slate-500 font-mono bg-white/5 px-2 py-0.5 rounded-md border border-white/5">
+            v2.0.0
+          </span>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }
