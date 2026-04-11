@@ -146,6 +146,7 @@ export default function SettingsPage() {
   // ── Account details ──────────────────────────────────────────────────────
   const [fullName, setFullName] = useState(userData?.fullName ?? "");
   const [email, setEmail] = useState(userData?.email ?? "");
+  const [username, setUsername] = useState(userData?.username ?? "");
   const [savingAccount, setSavingAccount] = useState(false);
 
   <Field
