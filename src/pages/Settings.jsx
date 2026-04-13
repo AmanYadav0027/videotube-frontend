@@ -15,6 +15,7 @@ import {
   EyeOff,
   Camera,
   Pencil,
+  Sparkles,
 } from "lucide-react";
 
 const spring = { type: "spring", stiffness: 380, damping: 28 };
@@ -25,14 +26,21 @@ function Toast({ message, type }) {
     <AnimatePresence>
       {message && (
         <motion.div
-          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+          initial={{ opacity: 0, y: 24, scale: 0.92 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 10, scale: 0.95 }}
-          className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-5 py-3 rounded-2xl text-sm font-semibold shadow-2xl border backdrop-blur-md ${
+          exit={{ opacity: 0, y: 12, scale: 0.95 }}
+          transition={spring}
+          className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-5 py-3 rounded-2xl text-sm font-bold backdrop-blur-2xl border shadow-2xl ${
             type === "success"
-              ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-300 shadow-emerald-500/20"
-              : "bg-rose-500/15 border-rose-500/30 text-rose-300 shadow-rose-500/20"
+              ? "text-emerald-300 border-emerald-500/30 shadow-emerald-500/20"
+              : "text-rose-300 border-rose-500/30 shadow-rose-500/20"
           }`}
+          style={{
+            background:
+              type === "success"
+                ? "rgba(16,185,129,0.12)"
+                : "rgba(244,63,94,0.12)",
+          }}
         >
           {type === "success" ? (
             <CheckCircle size={15} />
@@ -47,49 +55,72 @@ function Toast({ message, type }) {
 }
 
 // ─── Section wrapper ──────────────────────────────────────────────────────────
-function Section({ title, icon: Icon, accent = "indigo", children }) {
-  const colors = {
+function Section({
+  title,
+  icon: Icon,
+  accent = "indigo",
+  children,
+  delay = 0,
+}) {
+  const accentMap = {
     indigo: {
-      bg: "bg-indigo-500/10",
-      border: "border-indigo-500/20",
       text: "text-indigo-400",
-      line: "via-indigo-500/30",
+      bg: "rgba(99,102,241,0.08)",
+      border: "rgba(99,102,241,0.2)",
+      line: "rgba(99,102,241,0.5)",
     },
     violet: {
-      bg: "bg-violet-500/10",
-      border: "border-violet-500/20",
       text: "text-violet-400",
-      line: "via-violet-500/30",
+      bg: "rgba(139,92,246,0.08)",
+      border: "rgba(139,92,246,0.2)",
+      line: "rgba(139,92,246,0.5)",
     },
     amber: {
-      bg: "bg-amber-500/10",
-      border: "border-amber-500/20",
       text: "text-amber-400",
-      line: "via-amber-500/30",
+      bg: "rgba(245,158,11,0.08)",
+      border: "rgba(245,158,11,0.2)",
+      line: "rgba(245,158,11,0.5)",
     },
     rose: {
-      bg: "bg-rose-500/10",
-      border: "border-rose-500/20",
       text: "text-rose-400",
-      line: "via-rose-500/30",
+      bg: "rgba(244,63,94,0.08)",
+      border: "rgba(244,63,94,0.2)",
+      line: "rgba(244,63,94,0.5)",
     },
   };
-  const c = colors[accent];
+  const a = accentMap[accent];
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={spring}
-      className="bg-[#0f1117] border border-white/[0.07] rounded-2xl overflow-hidden shadow-lg"
+      transition={{ ...spring, delay }}
+      className="rounded-[1.75rem] overflow-hidden"
+      style={{
+        background: "rgba(10,10,15,0.85)",
+        backdropFilter: "blur(20px)",
+        border: "1px solid rgba(255,255,255,0.06)",
+        boxShadow: "0 12px 40px rgba(0,0,0,0.35)",
+      }}
     >
+      {/* Top accent line */}
       <div
-        className={`h-[2px] w-full bg-gradient-to-r from-transparent ${c.line} to-transparent opacity-60`}
+        className="h-px w-full"
+        style={{
+          background: `linear-gradient(90deg, transparent, ${a.line}, transparent)`,
+          opacity: 0.7,
+        }}
       />
-      <div className="px-6 py-5 border-b border-white/[0.05] flex items-center gap-3 bg-white/[0.02]">
+      {/* Header row */}
+      <div
+        className="px-6 py-5 border-b border-white/[0.05] flex items-center gap-3"
+        style={{ background: "rgba(255,255,255,0.01)" }}
+      >
         <div
-          className={`w-8 h-8 rounded-xl flex items-center justify-center border ${c.bg} ${c.border}`}
+          className="w-8 h-8 rounded-xl flex items-center justify-center border"
+          style={{ background: a.bg, borderColor: a.border }}
         >
-          <Icon size={15} className={c.text} />
+          <Icon size={15} className={a.text} />
         </div>
         <h2 className="text-sm font-bold text-slate-200 tracking-tight">
           {title}
@@ -111,7 +142,7 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+      <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">
         {label}
       </label>
       <div className="relative">
@@ -120,7 +151,19 @@ function Field({
           value={value}
           onChange={onChange}
           placeholder={placeholder}
-          className="w-full bg-[#0a0a0f] border border-white/[0.08] focus:border-indigo-500/50 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 outline-none transition-all duration-200 focus:shadow-lg focus:shadow-indigo-500/10 pr-10"
+          className="w-full border rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 outline-none transition-all duration-200 pr-10"
+          style={{
+            background: "rgba(5,5,8,0.9)",
+            borderColor: "rgba(255,255,255,0.08)",
+          }}
+          onFocus={(e) => {
+            e.target.style.borderColor = "rgba(99,102,241,0.5)";
+            e.target.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.08)";
+          }}
+          onBlur={(e) => {
+            e.target.style.borderColor = "rgba(255,255,255,0.08)";
+            e.target.style.boxShadow = "none";
+          }}
         />
         {rightEl && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -129,6 +172,33 @@ function Field({
         )}
       </div>
     </div>
+  );
+}
+
+// ─── Save Button ──────────────────────────────────────────────────────────────
+function SaveButton({ loading, label = "Save Changes", onClick, disabled }) {
+  return (
+    <motion.button
+      whileHover={{
+        scale: 1.02,
+        boxShadow: "0 12px 28px rgba(99,102,241,0.4)",
+      }}
+      whileTap={{ scale: 0.97 }}
+      onClick={onClick}
+      disabled={loading || disabled}
+      className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+      style={{
+        background: "linear-gradient(135deg, #6366f1, #7c3aed)",
+        boxShadow: "0 6px 20px rgba(99,102,241,0.3)",
+      }}
+    >
+      {loading ? (
+        <Loader2 size={14} className="animate-spin" />
+      ) : (
+        <CheckCircle size={14} />
+      )}
+      {label}
+    </motion.button>
   );
 }
 
@@ -283,51 +353,54 @@ export default function SettingsPage() {
     document.title = "Settings — VideoTube";
   }, []);
 
-  const SaveButton = ({
-    loading,
-    label = "Save Changes",
-    onClick,
-    disabled,
-  }) => (
-    <button
-      onClick={onClick}
-      disabled={loading || disabled}
-      className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-lg shadow-indigo-500/25 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      {loading ? (
-        <Loader2 size={14} className="animate-spin" />
-      ) : (
-        <CheckCircle size={14} />
-      )}
-      {label}
-    </button>
-  );
-
   return (
-    <div className="min-h-full bg-[#0a0a0f] p-4 sm:p-6 overflow-x-hidden">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <div
+      className="min-h-screen p-4 sm:p-6 lg:p-8 overflow-x-hidden"
+      style={{ background: "#050508" }}
+    >
+      {/* Ambient orb */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <div
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] opacity-[0.06] mix-blend-screen"
+          style={{
+            background:
+              "radial-gradient(ellipse, rgba(99,102,241,1) 0%, transparent 70%)",
+            filter: "blur(80px)",
+          }}
+        />
+      </div>
+
+      <div className="max-w-2xl mx-auto space-y-5 relative z-10">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: -12, filter: "blur(6px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={spring}
-          className="flex items-center gap-4 group"
+          className="flex items-center gap-4"
         >
-          <div className="w-11 h-11 rounded-xl bg-slate-500/15 border border-slate-500/20 flex items-center justify-center group-hover:rotate-12 group-hover:scale-110 transition-transform duration-500">
+          <div
+            className="w-12 h-12 rounded-2xl flex items-center justify-center border border-slate-500/20"
+            style={{ background: "rgba(100,116,139,0.08)" }}
+          >
             <Settings size={20} className="text-slate-400" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-100 tracking-tight">
+            <h1 className="text-2xl font-black text-white tracking-tight">
               Settings
             </h1>
-            <p className="text-xs text-slate-500 font-medium">
-              Manage your account
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Manage your account preferences
             </p>
           </div>
         </motion.div>
 
         {/* Account Details */}
-        <Section title="Account Details" icon={User} accent="indigo">
+        <Section
+          title="Account Details"
+          icon={User}
+          accent="indigo"
+          delay={0.05}
+        >
           <div className="space-y-4">
             <Field
               label="Full Name"
@@ -353,7 +426,12 @@ export default function SettingsPage() {
         </Section>
 
         {/* Change Password */}
-        <Section title="Change Password" icon={Lock} accent="violet">
+        <Section
+          title="Change Password"
+          icon={Lock}
+          accent="violet"
+          delay={0.1}
+        >
           <div className="space-y-4">
             <Field
               label="Current Password"
@@ -410,7 +488,12 @@ export default function SettingsPage() {
         </Section>
 
         {/* Avatar */}
-        <Section title="Profile Picture" icon={Camera} accent="amber">
+        <Section
+          title="Profile Picture"
+          icon={Camera}
+          accent="amber"
+          delay={0.15}
+        >
           <div className="flex items-center gap-5">
             <div className="relative group/avatar shrink-0">
               <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-white/10 shadow-xl">
@@ -421,7 +504,10 @@ export default function SettingsPage() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 text-xl font-bold">
+                  <div
+                    className="w-full h-full flex items-center justify-center text-indigo-400 text-xl font-bold"
+                    style={{ background: "rgba(99,102,241,0.15)" }}
+                  >
                     {userData?.fullName?.[0]?.toUpperCase() ?? "?"}
                   </div>
                 )}
@@ -442,7 +528,10 @@ export default function SettingsPage() {
                 200×200px.
               </p>
               <div className="flex items-center gap-2">
-                <label className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 bg-white/5 hover:bg-white/10 border border-white/[0.08] transition-all cursor-pointer active:scale-95">
+                <label
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 border border-white/[0.08] transition-all cursor-pointer hover:bg-white/[0.06] active:scale-95"
+                  style={{ background: "rgba(255,255,255,0.04)" }}
+                >
                   <Camera size={13} /> Choose file
                   <input
                     type="file"
@@ -469,9 +558,12 @@ export default function SettingsPage() {
         </Section>
 
         {/* Cover Image */}
-        <Section title="Cover Image" icon={Image} accent="rose">
+        <Section title="Cover Image" icon={Image} accent="rose" delay={0.2}>
           <div className="space-y-4">
-            <div className="relative w-full h-32 rounded-xl overflow-hidden border border-white/[0.07] bg-[#0a0a0f] group/cover">
+            <div
+              className="relative w-full h-32 rounded-xl overflow-hidden border border-white/[0.07] group/cover"
+              style={{ background: "rgba(5,5,8,0.9)" }}
+            >
               {coverPreview || userData?.coverImage ? (
                 <img
                   src={coverPreview ?? userData.coverImage}
@@ -494,7 +586,10 @@ export default function SettingsPage() {
               </label>
             </div>
             <div className="flex items-center gap-2">
-              <label className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 bg-white/5 hover:bg-white/10 border border-white/[0.08] transition-all cursor-pointer active:scale-95">
+              <label
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 border border-white/[0.08] transition-all cursor-pointer hover:bg-white/[0.06] active:scale-95"
+                style={{ background: "rgba(255,255,255,0.04)" }}
+              >
                 <Camera size={13} /> Choose file
                 <input
                   type="file"
@@ -518,6 +613,28 @@ export default function SettingsPage() {
             )}
           </div>
         </Section>
+
+        {/* Footer status */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="flex items-center justify-center gap-3 py-2 opacity-40"
+        >
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+          </span>
+          <span className="text-[11px] font-bold text-slate-400 tracking-widest uppercase">
+            System Online
+          </span>
+          <span
+            className="text-[10px] text-slate-500 font-mono px-2 py-0.5 rounded-md border border-white/[0.06]"
+            style={{ background: "rgba(255,255,255,0.03)" }}
+          >
+            v2.0.0
+          </span>
+        </motion.div>
       </div>
 
       <Toast message={toast.message} type={toast.type} />

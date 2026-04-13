@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { Search, User, Menu, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Link,
   useNavigate,
@@ -9,134 +10,36 @@ import {
   useSearchParams,
 } from "react-router-dom";
 
+const spring = { type: "spring", stiffness: 400, damping: 30, mass: 0.8 };
+
+// Injected global styles — fonts + shimmer animation only
 const navStyles = `
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap');
-
-  .navbar-root { font-family: 'DM Sans', sans-serif; }
-
-  .navbar-header {
-    position: relative; height: 64px;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 24px; gap: 16px;
-    background: #0a0a0f;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    z-index: 100; overflow: hidden;
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap');
+  .nav-font { font-family: 'DM Sans', sans-serif; }
+  .nav-logo-font { font-family: 'Syne', sans-serif; }
+  @keyframes shimmerLine {
+    0%  { left: -60%; opacity: 0; }
+    20% { opacity: 1; }
+    80% { opacity: 1; }
+    100%{ left: 140%; opacity: 0; }
   }
-  .navbar-header::before {
-    content: ''; position: absolute; inset: 0;
-    background: linear-gradient(120deg, rgba(99,102,241,0.08) 0%, rgba(236,72,153,0.06) 40%, rgba(16,185,129,0.05) 100%);
-    background-size: 300% 300%;
-    animation: auroraShift 8s ease infinite; pointer-events: none;
+  @keyframes pulseDot {
+    0%,100% { transform:scale(1);   box-shadow:0 0 8px  rgba(99,102,241,0.7); }
+    50%      { transform:scale(1.4); box-shadow:0 0 18px rgba(236,72,153,0.9); }
   }
-  .navbar-header::after {
-    content: ''; position: absolute; top: 0; left: -100%;
-    width: 60%; height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(99,102,241,0.8), rgba(236,72,153,0.6), transparent);
+  .nav-shimmer::after {
+    content:''; position:absolute; top:0; left:-60%;
+    width:50%; height:1px;
+    background:linear-gradient(90deg,transparent,rgba(99,102,241,0.9),rgba(236,72,153,0.7),transparent);
     animation: shimmerLine 4s ease-in-out infinite;
   }
-  @keyframes auroraShift { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
-  @keyframes shimmerLine { 0%{left:-60%} 100%{left:140%} }
-
-  .navbar-logo {
-    font-family:'Syne',sans-serif; font-size:1.25rem; font-weight:700;
-    letter-spacing:-0.02em; color:#fff; text-decoration:none;
-    display:flex; align-items:center; gap:8px;
-    flex-shrink:0; position:relative; z-index:1; transition:opacity 0.2s;
-  }
-  .navbar-logo:hover{opacity:0.8}
-  .navbar-logo-dot {
-    width:8px;height:8px;border-radius:50%;
+  .nav-logo-dot {
+    width:7px;height:7px;border-radius:50%;flex-shrink:0;
     background:linear-gradient(135deg,#6366f1,#ec4899);
-    box-shadow:0 0 10px rgba(99,102,241,0.7);
-    animation:pulseDot 2.4s ease-in-out infinite;flex-shrink:0;
+    animation:pulseDot 2.4s ease-in-out infinite;
   }
-  @keyframes pulseDot{0%,100%{transform:scale(1);box-shadow:0 0 10px rgba(99,102,241,0.7)}50%{transform:scale(1.3);box-shadow:0 0 18px rgba(236,72,153,0.9)}}
-
-  .navbar-search{flex:1;position:relative;z-index:1;max-width:400px;margin:0 auto;}
-  .navbar-search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:rgba(255,255,255,0.3);pointer-events:none;transition:color 0.2s}
-  .navbar-search:focus-within svg{color:rgba(99,102,241,0.8)}
-  .navbar-search input{
-    width:100%;box-sizing:border-box;background:rgba(255,255,255,0.05);
-    border:1px solid rgba(255,255,255,0.08);border-radius:10px;
-    padding:8px 14px 8px 36px;font-size:0.8125rem;font-family:'DM Sans',sans-serif;
-    color:rgba(255,255,255,0.85);outline:none;
-    transition:background 0.2s,border-color 0.2s,box-shadow 0.2s;
-  }
-  .navbar-search input::placeholder{color:rgba(255,255,255,0.25)}
-  .navbar-search input:focus{background:rgba(99,102,241,0.08);border-color:rgba(99,102,241,0.45);box-shadow:0 0 0 3px rgba(99,102,241,0.12)}
-
-  .navbar-links{display:flex;align-items:center;gap:4px;position:relative;z-index:1;flex-shrink:0}
-
-  .navbar-link{
-    position:relative;padding:6px 12px;font-size:0.8125rem;font-weight:500;
-    color:rgba(255,255,255,0.5);text-decoration:none;border-radius:8px;overflow:hidden;transition:color 0.2s;
-  }
-  .navbar-link::before{content:'';position:absolute;inset:0;border-radius:8px;background:linear-gradient(135deg,rgba(99,102,241,0.15),rgba(236,72,153,0.1));opacity:0;transition:opacity 0.2s}
-  .navbar-link::after{content:'';position:absolute;bottom:4px;left:12px;right:12px;height:1.5px;background:linear-gradient(90deg,#6366f1,#ec4899);transform:scaleX(0);transform-origin:left;border-radius:2px;transition:transform 0.25s cubic-bezier(0.4,0,0.2,1)}
-  .navbar-link:hover{color:rgba(255,255,255,0.95)}
-  .navbar-link:hover::before{opacity:1}
-  .navbar-link:hover::after{transform:scaleX(1)}
-  .navbar-link.active{color:rgba(255,255,255,0.95)}
-  .navbar-link.active::before{opacity:1}
-  .navbar-link.active::after{transform:scaleX(1)}
-
-  .navbar-avatar-pill{
-    display:flex;align-items:center;gap:8px;padding:4px 4px 4px 10px;
-    border-radius:999px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);
-    text-decoration:none;margin-left:4px;flex-shrink:0;transition:border-color 0.2s,background 0.2s;
-  }
-  .navbar-avatar-pill:hover{border-color:rgba(99,102,241,0.4);background:rgba(99,102,241,0.08)}
-  .navbar-avatar-img{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#ec4899);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
-  .navbar-avatar-img img{width:100%;height:100%;object-fit:cover}
-  .navbar-avatar-img svg{width:14px;height:14px;color:#fff}
-  .navbar-avatar-name{font-size:0.75rem;font-weight:500;color:rgba(255,255,255,0.7);max-width:90px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-  .navbar-signin-btn{
-    display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:10px;
-    font-size:0.8125rem;font-weight:600;color:#fff;text-decoration:none;
-    background:linear-gradient(135deg,#6366f1,#7c3aed);
-    box-shadow:0 0 0 0 rgba(99,102,241,0.4);transition:opacity 0.2s,box-shadow 0.2s;
-    margin-left:4px;flex-shrink:0;
-  }
-  .navbar-signin-btn:hover{opacity:0.88;box-shadow:0 0 14px rgba(99,102,241,0.4)}
-
-  .navbar-hamburger-btn{
-    display:none;align-items:center;justify-content:center;width:38px;height:38px;
-    background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
-    border-radius:9px;color:rgba(255,255,255,0.7);cursor:pointer;
-    position:relative;z-index:1;flex-shrink:0;transition:background 0.2s,border-color 0.2s,color 0.2s;
-  }
-  .navbar-hamburger-btn:hover{background:rgba(99,102,241,0.15);border-color:rgba(99,102,241,0.35);color:#fff}
-  .navbar-hamburger-btn svg{width:18px;height:18px}
-
-  .navbar-drawer{background:#0d0d14;border-bottom:1px solid rgba(255,255,255,0.07);overflow:hidden;max-height:0;opacity:0;transition:max-height 0.35s cubic-bezier(0.4,0,0.2,1),opacity 0.28s ease}
-  .navbar-drawer.is-open{max-height:460px;opacity:1}
-  
-  .navbar-drawer-inner{padding:14px 20px 22px;display:flex;flex-direction:column;gap:4px}
-  .navbar-drawer-search{position:relative;margin-bottom:10px}
-  .navbar-drawer-search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:rgba(255,255,255,0.3);pointer-events:none;transition:color 0.2s}
-  .navbar-drawer-search:focus-within svg{color:rgba(99,102,241,0.8)}
-  .navbar-drawer-search input{width:100%;box-sizing:border-box;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:10px 14px 10px 36px;font-size:0.875rem;font-family:'DM Sans',sans-serif;color:rgba(255,255,255,0.85);outline:none;transition:background 0.2s,border-color 0.2s,box-shadow 0.2s}
-  .navbar-drawer-search input::placeholder{color:rgba(255,255,255,0.25)}
-  .navbar-drawer-search input:focus{background:rgba(99,102,241,0.08);border-color:rgba(99,102,241,0.45);box-shadow:0 0 0 3px rgba(99,102,241,0.12)}
-  .navbar-drawer-divider{height:1px;background:rgba(255,255,255,0.06);border:none;margin:6px 0}
-  .navbar-drawer-link{display:flex;align-items:center;gap:10px;padding:11px 14px;font-size:0.9375rem;font-weight:500;color:rgba(255,255,255,0.55);text-decoration:none;border-radius:10px;border:1px solid transparent;transition:background 0.18s,color 0.18s,border-color 0.18s}
-  .navbar-drawer-link:hover{background:rgba(99,102,241,0.1);border-color:rgba(99,102,241,0.2);color:#fff}
-  .navbar-drawer-dot{width:6px;height:6px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#ec4899);opacity:0.5;flex-shrink:0;transition:opacity 0.18s}
-  .navbar-drawer-link:hover .navbar-drawer-dot{opacity:1}
-  .navbar-drawer-profile{display:flex;align-items:center;gap:12px;margin-top:6px;padding:11px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.03);text-decoration:none;transition:background 0.18s,border-color 0.18s}
-  .navbar-drawer-profile:hover{background:rgba(99,102,241,0.08);border-color:rgba(99,102,241,0.2)}
-  .navbar-drawer-profile-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#ec4899);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
-  .navbar-drawer-profile-avatar img{width:100%;height:100%;object-fit:cover}
-  .navbar-drawer-profile-avatar svg{width:15px;height:15px;color:#fff}
-  .navbar-drawer-profile-info{display:flex;flex-direction:column;min-width:0}
-  .navbar-drawer-profile-name{font-size:0.875rem;font-weight:500;color:rgba(255,255,255,0.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .navbar-drawer-profile-sub{font-size:0.7rem;color:rgba(255,255,255,0.3);margin-top:1px}
-  .navbar-drawer-signin{display:flex;align-items:center;justify-content:center;margin-top:8px;padding:13px 14px;border-radius:10px;font-size:0.9375rem;font-weight:600;color:#fff;text-decoration:none;background:linear-gradient(135deg,#6366f1,#7c3aed);transition:opacity 0.2s}
-  .navbar-drawer-signin:hover{opacity:0.85}
-
-  @media(max-width:860px){.navbar-search{max-width:260px}}
-  @media(max-width:600px){.navbar-search{display:none}.navbar-links{display:none}.navbar-hamburger-btn{display:flex}}
+  @media(max-width:860px){.nav-search-hide{max-width:220px}}
+  @media(max-width:600px){.nav-search-hide{display:none}.nav-links-hide{display:none}.nav-burger{display:flex!important}}
 `;
 
 export default function Navbar() {
@@ -146,7 +49,6 @@ export default function Navbar() {
   const location = useLocation();
 
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-
   const [searchParams] = useSearchParams();
   const queryFromUrl = searchParams.get("q") || "";
   const [searchInput, setSearchInput] = useState(queryFromUrl);
@@ -169,141 +71,229 @@ export default function Navbar() {
   };
 
   return (
-    <div className="navbar-root relative z-50">
+    <div className="nav-font relative z-50">
       <style>{navStyles}</style>
 
-      <header className="navbar-header">
-        {/* Logo — SUGGESTION: updated to VideoTube */}
+      {/* ── Header bar ── */}
+      <header
+        className="nav-shimmer relative h-16 flex items-center justify-between px-6 gap-4 overflow-hidden border-b border-white/[0.05]"
+        style={{
+          background:
+            "linear-gradient(90deg, rgba(10,10,18,0.98) 0%, rgba(8,8,15,0.99) 100%)",
+          backdropFilter: "blur(20px)",
+        }}
+      >
+        {/* Subtle aurora */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(120deg,rgba(99,102,241,0.06) 0%,rgba(236,72,153,0.04) 50%,rgba(16,185,129,0.03) 100%)",
+          }}
+        />
+
+        {/* Logo */}
         <Link
           to="/"
-          className="navbar-logo active:scale-95 transition-transform duration-200"
+          className="nav-logo-font relative z-10 flex items-center gap-2 text-white font-extrabold text-lg tracking-tight shrink-0 hover:opacity-80 transition-opacity active:scale-95"
         >
-          <span className="navbar-logo-dot" />
+          <span className="nav-logo-dot" />
           VideoTube
         </Link>
 
         {/* Search */}
         <form
-          className="navbar-search transition-transform duration-300 focus-within:scale-[1.02]"
           onSubmit={handleSearch}
+          className="nav-search-hide relative z-10 flex-1 max-w-md mx-auto"
         >
-          <Search />
+          <Search
+            size={14}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none transition-colors duration-200"
+            style={{ zIndex: 1 }}
+          />
           <input
             type="text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search videos..."
+            className="w-full bg-white/[0.04] border border-white/[0.07] rounded-xl pl-9 pr-4 py-2 text-sm text-slate-200 placeholder-slate-600 outline-none transition-all duration-200 focus:bg-indigo-500/[0.07] focus:border-indigo-500/40 focus:shadow-[0_0_0_3px_rgba(99,102,241,0.1)]"
           />
         </form>
 
         {/* Desktop nav */}
-        <nav className="navbar-links">
-          <Link
-            to="/"
-            className={`navbar-link active:scale-95 transition-all ${atHome ? "active" : ""}`}
-          >
-            Home
-          </Link>
-          <Link
-            to="/about"
-            className={`navbar-link active:scale-95 transition-all ${atAbout ? "active" : ""}`}
-          >
-            About
-          </Link>
+        <nav className="nav-links-hide relative z-10 flex items-center gap-1 shrink-0">
+          {[
+            { to: "/", label: "Home", active: !!atHome },
+            { to: "/about", label: "About", active: !!atAbout },
+          ].map(({ to, label, active }) => (
+            <Link
+              key={to}
+              to={to}
+              className={`relative px-3 py-1.5 text-sm font-medium rounded-lg transition-colors duration-200 ${active ? "text-white" : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]"}`}
+            >
+              {active && (
+                <motion.div
+                  layoutId="nav-active-bg"
+                  className="absolute inset-0 rounded-lg bg-white/[0.06] border border-white/[0.08]"
+                  transition={spring}
+                />
+              )}
+              <span className="relative z-10">{label}</span>
+            </Link>
+          ))}
 
           {isAuthenticated ? (
-            <Link
-              to="/profile"
-              className="navbar-avatar-pill active:scale-95 transition-all"
-              aria-label="Your profile"
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              transition={spring}
             >
-              <span className="navbar-avatar-name">
-                {user?.fullName || user?.username}
-              </span>
-              <span className="navbar-avatar-img ring-2 ring-transparent group-hover:ring-indigo-500/50">
-                {user?.avatar ? (
-                  <img src={user.avatar} alt={user?.fullName} />
-                ) : (
-                  <User />
-                )}
-              </span>
-            </Link>
+              <Link
+                to="/profile"
+                className="flex items-center gap-2 pl-3 pr-1 py-1 rounded-full border border-white/[0.08] bg-white/[0.03] hover:border-indigo-500/30 hover:bg-indigo-500/[0.07] transition-all duration-200 ml-1"
+                aria-label="Your profile"
+              >
+                <span className="text-xs font-medium text-slate-300 max-w-[90px] truncate">
+                  {user?.fullName || user?.username}
+                </span>
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center overflow-hidden border border-white/10 shadow-md shadow-indigo-500/20">
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user?.fullName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User size={13} className="text-white" />
+                  )}
+                </div>
+              </Link>
+            </motion.div>
           ) : (
-            <Link
-              to="/login"
-              className="navbar-signin-btn active:scale-95 transition-all"
+            <motion.div
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              transition={spring}
             >
-              Sign in
-            </Link>
+              <Link
+                to="/login"
+                className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 shadow-lg shadow-indigo-500/20 transition-all duration-200 ml-1"
+              >
+                Sign in
+              </Link>
+            </motion.div>
           )}
         </nav>
 
         {/* Hamburger */}
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05, backgroundColor: "rgba(99,102,241,0.12)" }}
+          whileTap={{ scale: 0.93 }}
+          transition={spring}
           onClick={() => setIsMobileOpen(!isMobileOpen)}
-          className="navbar-hamburger-btn active:scale-90 transition-all outline-none"
+          className="nav-burger hidden relative z-10 w-9 h-9 items-center justify-center rounded-xl border border-white/[0.08] text-slate-400 hover:text-white transition-colors duration-150 outline-none"
           aria-label="Toggle menu"
           aria-expanded={isMobileOpen}
         >
-          {isMobileOpen ? <X /> : <Menu />}
-        </button>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={isMobileOpen ? "x" : "menu"}
+              initial={{ opacity: 0, rotate: -90, scale: 0.7 }}
+              animate={{ opacity: 1, rotate: 0, scale: 1 }}
+              exit={{ opacity: 0, rotate: 90, scale: 0.7 }}
+              transition={{ duration: 0.15 }}
+            >
+              {isMobileOpen ? <X size={17} /> : <Menu size={17} />}
+            </motion.div>
+          </AnimatePresence>
+        </motion.button>
       </header>
 
-      {/* Mobile drawer */}
-      <div className={`navbar-drawer ${isMobileOpen ? "is-open" : ""}`}>
-        <div className="navbar-drawer-inner">
-          <form
-            className="navbar-drawer-search focus-within:scale-[1.02] transition-transform duration-300"
-            onSubmit={handleSearch}
+      {/* ── Mobile drawer ── */}
+      <AnimatePresence>
+        {isMobileOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
+            className="overflow-hidden border-b border-white/[0.06]"
+            style={{
+              background: "rgba(10,10,18,0.97)",
+              backdropFilter: "blur(20px)",
+            }}
           >
-            <Search />
-            <input
-              type="text"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search videos..."
-            />
-          </form>
+            <div className="px-5 py-4 flex flex-col gap-3">
+              {/* Mobile search */}
+              <form onSubmit={handleSearch} className="relative">
+                <Search
+                  size={14}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"
+                />
+                <input
+                  type="text"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder="Search videos..."
+                  className="w-full bg-white/[0.04] border border-white/[0.07] rounded-xl pl-9 pr-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 outline-none focus:border-indigo-500/40 transition-all"
+                />
+              </form>
 
-          <hr className="navbar-drawer-divider" />
-          <Link to="/" className="navbar-drawer-link active:scale-95">
-            <span className="navbar-drawer-dot" />
-            Home
-          </Link>
-          <Link to="/about" className="navbar-drawer-link active:scale-95">
-            <span className="navbar-drawer-dot" />
-            About
-          </Link>
-          <hr className="navbar-drawer-divider" />
+              <hr className="border-white/[0.06]" />
 
-          {isAuthenticated ? (
-            <Link
-              to="/profile"
-              className="navbar-drawer-profile active:scale-95"
-            >
-              <span className="navbar-drawer-profile-avatar">
-                {user?.avatar ? (
-                  <img src={user.avatar} alt={user?.fullName} />
-                ) : (
-                  <User />
-                )}
-              </span>
-              <span className="navbar-drawer-profile-info">
-                <span className="navbar-drawer-profile-name">
-                  {user?.fullName || user?.username}
-                </span>
-                <span className="navbar-drawer-profile-sub">
-                  View profile & sign out
-                </span>
-              </span>
-            </Link>
-          ) : (
-            <Link to="/login" className="navbar-drawer-signin active:scale-95">
-              Sign in to your account
-            </Link>
-          )}
-        </div>
-      </div>
+              {[
+                { to: "/", label: "Home" },
+                { to: "/about", label: "About" },
+              ].map(({ to, label }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-[0.9375rem] font-medium text-slate-300 hover:text-white hover:bg-white/[0.05] border border-transparent hover:border-white/[0.07] transition-all"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-gradient-to-br from-indigo-500 to-pink-500 opacity-60" />
+                  {label}
+                </Link>
+              ))}
+
+              <hr className="border-white/[0.06]" />
+
+              {isAuthenticated ? (
+                <Link
+                  to="/profile"
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl border border-white/[0.07] bg-white/[0.02] hover:bg-indigo-500/[0.08] hover:border-indigo-500/20 transition-all"
+                >
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center overflow-hidden border border-white/10 shrink-0">
+                    {user?.avatar ? (
+                      <img
+                        src={user.avatar}
+                        alt={user?.fullName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User size={15} className="text-white" />
+                    )}
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-sm font-semibold text-slate-200 truncate">
+                      {user?.fullName || user?.username}
+                    </span>
+                    <span className="text-xs text-slate-500">
+                      View profile & sign out
+                    </span>
+                  </div>
+                </Link>
+              ) : (
+                <Link
+                  to="/login"
+                  className="flex items-center justify-center py-3 px-4 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 shadow-lg shadow-indigo-500/20 transition-opacity hover:opacity-90"
+                >
+                  Sign in to your account
+                </Link>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -13,12 +13,15 @@ import {
   MoreHorizontal,
   MessageCircle,
   Repeat2,
+  Feather,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+const spring = { type: "spring", stiffness: 400, damping: 30, mass: 0.8 };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Toast
 // ─────────────────────────────────────────────────────────────────────────────
-
 function Toast({ message, type = "info", onClose }) {
   useEffect(() => {
     const t = setTimeout(onClose, 3000);
@@ -26,52 +29,76 @@ function Toast({ message, type = "info", onClose }) {
   }, [onClose]);
 
   const styles = {
-    success:
-      "bg-emerald-950/90 border-emerald-500/30 text-emerald-300 shadow-emerald-500/20",
-    error: "bg-rose-950/90 border-rose-500/30 text-rose-300 shadow-rose-500/20",
-    info: "bg-slate-900/90 border-white/10 text-slate-300 shadow-black/50",
+    success: {
+      bg: "rgba(16,185,129,0.12)",
+      border: "rgba(52,211,153,0.3)",
+      color: "#6ee7b7",
+    },
+    error: {
+      bg: "rgba(244,63,94,0.12)",
+      border: "rgba(251,113,133,0.3)",
+      color: "#fda4af",
+    },
+    info: {
+      bg: "rgba(99,102,241,0.12)",
+      border: "rgba(165,180,252,0.3)",
+      color: "#c7d2fe",
+    },
   };
+  const s = styles[type] ?? styles.info;
 
   return (
-    <div
-      className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-5 py-3.5 rounded-2xl shadow-2xl border text-sm font-semibold backdrop-blur-md animate-in slide-in-from-bottom-10 fade-in zoom-in-95 duration-300 ease-out ${styles[type]}`}
+    <motion.div
+      initial={{ opacity: 0, y: 30, scale: 0.9 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 16, scale: 0.95 }}
+      transition={spring}
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl border text-sm font-bold backdrop-blur-2xl shadow-2xl"
+      style={{ background: s.bg, borderColor: s.border, color: s.color }}
     >
-      {type === "success" && (
-        <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
-          <Check size={14} className="text-emerald-400" />
-        </div>
-      )}
-      {type === "error" && (
-        <div className="w-6 h-6 rounded-full bg-rose-500/20 flex items-center justify-center">
-          <X size={14} className="text-rose-400" />
-        </div>
-      )}
+      {type === "success" && <Check size={15} strokeWidth={3} />}
+      {type === "error" && <X size={15} strokeWidth={3} />}
       {message}
-    </div>
+    </motion.div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Skeleton
 // ─────────────────────────────────────────────────────────────────────────────
-
 function TweetSkeleton() {
   return (
     <div className="space-y-4">
       {Array.from({ length: 4 }).map((_, i) => (
         <div
           key={i}
-          className="bg-slate-800/20 border border-white/5 rounded-2xl p-5 animate-pulse shadow-inner"
+          className="rounded-2xl p-5 animate-pulse border border-white/[0.05]"
+          style={{ background: "rgba(255,255,255,0.025)" }}
         >
           <div className="flex gap-4">
-            <div className="w-10 h-10 rounded-full bg-slate-800/50 shrink-0 border border-white/5" />
+            <div
+              className="w-10 h-10 rounded-full shrink-0 border border-white/[0.05]"
+              style={{ background: "rgba(255,255,255,0.04)" }}
+            />
             <div className="flex-1 space-y-3 pt-1">
               <div className="flex gap-2">
-                <div className="h-3.5 bg-slate-800/50 rounded-md w-28" />
-                <div className="h-3.5 bg-slate-800/40 rounded-md w-16" />
+                <div
+                  className="h-3.5 rounded-md w-28"
+                  style={{ background: "rgba(255,255,255,0.05)" }}
+                />
+                <div
+                  className="h-3.5 rounded-md w-16"
+                  style={{ background: "rgba(255,255,255,0.04)" }}
+                />
               </div>
-              <div className="h-3 bg-slate-800/40 rounded-md w-full" />
-              <div className="h-3 bg-slate-800/40 rounded-md w-3/4" />
+              <div
+                className="h-3 rounded-md w-full"
+                style={{ background: "rgba(255,255,255,0.04)" }}
+              />
+              <div
+                className="h-3 rounded-md w-3/4"
+                style={{ background: "rgba(255,255,255,0.04)" }}
+              />
             </div>
           </div>
         </div>
@@ -83,7 +110,6 @@ function TweetSkeleton() {
 // ─────────────────────────────────────────────────────────────────────────────
 // Tweet card
 // ─────────────────────────────────────────────────────────────────────────────
-
 function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -91,14 +117,12 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
-
   const [isLiked, setIsLiked] = useState(tweet.isLiked || false);
   const [likesCount, setLikesCount] = useState(tweet.likesCount || 0);
   const [liking, setLiking] = useState(false);
 
   const menuRef = useRef(null);
   const editRef = useRef(null);
-
   const owner = tweet.owner ?? {};
   const initial = owner.username?.[0]?.toUpperCase() || "?";
   const isOwner = currentUserId && owner._id?.toString() === currentUserId;
@@ -159,12 +183,10 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
 
   const handleToggleLike = async () => {
     if (!currentUserId || liking) return;
-
     const previousIsLiked = isLiked;
     setIsLiked(!previousIsLiked);
     setLikesCount((prev) => (previousIsLiked ? prev - 1 : prev + 1));
     setLiking(true);
-
     try {
       await axios.post(`/api/v2/likes/toggle/t/${tweet._id}`);
     } catch {
@@ -176,12 +198,37 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
   };
 
   return (
-    <div className="group bg-[#0f1117] border border-white/5 rounded-2xl p-5 hover:border-white/10 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/50 relative animate-in slide-in-from-top-8 fade-in duration-500 ease-out fill-mode-both">
-      <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-indigo-500/10 group-hover:via-indigo-500/30 to-transparent transition-colors duration-500" />
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 16, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={spring}
+      whileHover={{ y: -2 }}
+      className="group relative rounded-2xl p-5 border transition-all duration-300 overflow-hidden"
+      style={{
+        background: "rgba(10,10,15,0.85)",
+        backdropFilter: "blur(20px)",
+        borderColor: "rgba(255,255,255,0.06)",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+      }}
+    >
+      {/* Hover top shimmer line */}
+      <div
+        className="absolute top-0 left-6 right-6 h-px opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent, rgba(99,102,241,0.4), transparent)",
+        }}
+      />
 
       <div className="flex gap-4">
         {/* Avatar */}
-        <div className="shrink-0 w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-105">
+        <motion.div
+          whileHover={{ scale: 1.08 }}
+          transition={spring}
+          className="shrink-0 w-10 h-10 rounded-full overflow-hidden flex items-center justify-center shadow-lg"
+          style={{ background: "linear-gradient(135deg, #6366f1, #7c3aed)" }}
+        >
           {owner.avatar ? (
             <img
               src={owner.avatar}
@@ -193,21 +240,22 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
               {initial}
             </span>
           )}
-        </div>
+        </motion.div>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
+          {/* Header row */}
+          <div className="flex items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-2 flex-wrap min-w-0">
               <span className="text-sm font-bold text-slate-200 truncate group-hover:text-white transition-colors">
                 {owner.fullName || owner.username || "Unknown"}
               </span>
               {owner.username && (
-                <span className="text-xs font-medium text-slate-500">
+                <span className="text-xs font-medium text-slate-600">
                   @{owner.username}
                 </span>
               )}
               <span className="text-[10px] text-slate-700">·</span>
-              <span className="text-xs font-medium text-slate-500">
+              <span className="text-xs font-medium text-slate-600">
                 {timeAgo(tweet.createdAt)}
               </span>
             </div>
@@ -215,42 +263,63 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
             {/* Menu */}
             {isOwner && (
               <div ref={menuRef} className="relative shrink-0">
-                <button
+                <motion.button
+                  whileHover={{
+                    scale: 1.1,
+                    backgroundColor: "rgba(255,255,255,0.08)",
+                  }}
+                  whileTap={{ scale: 0.9 }}
                   onClick={() => {
                     setMenuOpen((v) => !v);
                     setConfirmDel(false);
                   }}
-                  className="p-1.5 rounded-lg text-slate-600 hover:text-slate-200 hover:bg-white/10 transition-all duration-200 active:scale-90 outline-none focus-visible:ring-2 ring-indigo-500/50"
+                  className="p-1.5 rounded-lg text-slate-600 hover:text-slate-200 transition-all outline-none"
+                  style={{ backdropFilter: "blur(10px)" }}
                 >
                   <MoreHorizontal size={16} />
-                </button>
-
-                {menuOpen && (
-                  <div className="absolute right-0 top-8 z-20 w-36 bg-[#1a1a24] border border-white/10 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 fade-in duration-200 origin-top-right">
-                    <button
-                      onClick={() => {
-                        setEditing(true);
-                        setMenuOpen(false);
+                </motion.button>
+                <AnimatePresence>
+                  {menuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.9, y: -8 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.9, y: -8 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 top-8 z-20 w-36 rounded-xl overflow-hidden shadow-2xl border border-white/10"
+                      style={{
+                        background: "rgba(15,15,22,0.97)",
+                        backdropFilter: "blur(20px)",
                       }}
-                      className="flex items-center gap-2.5 w-full px-4 py-3 text-xs font-semibold text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
                     >
-                      <Edit3 size={14} /> Edit
-                    </button>
-                    <button
-                      onClick={handleDelete}
-                      className="flex items-center gap-2.5 w-full px-4 py-3 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors"
-                    >
-                      <Trash2 size={14} /> Delete
-                    </button>
-                  </div>
-                )}
+                      <button
+                        onClick={() => {
+                          setEditing(true);
+                          setMenuOpen(false);
+                        }}
+                        className="flex items-center gap-2.5 w-full px-4 py-3 text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white transition-colors"
+                      >
+                        <Edit3 size={14} /> Edit
+                      </button>
+                      <button
+                        onClick={handleDelete}
+                        className="flex items-center gap-2.5 w-full px-4 py-3 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors"
+                      >
+                        <Trash2 size={14} /> Delete
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             )}
           </div>
 
           {/* Content / Edit mode */}
           {editing ? (
-            <div className="mt-3 space-y-3 animate-in fade-in duration-300">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-1 space-y-3"
+            >
               <textarea
                 ref={editRef}
                 value={editContent}
@@ -264,44 +333,56 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
                   }
                 }}
                 rows={3}
-                className="w-full bg-black/20 border border-indigo-500/30 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none resize-none focus:border-indigo-500 focus:shadow-[0_0_15px_rgba(99,102,241,0.15)] transition-all duration-300"
+                className="w-full rounded-xl px-4 py-3 text-sm text-slate-200 outline-none resize-none transition-all border"
+                style={{
+                  background: "rgba(99,102,241,0.06)",
+                  borderColor: "rgba(99,102,241,0.3)",
+                }}
               />
               <div className="flex items-center justify-end gap-2">
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.96 }}
                   onClick={() => {
                     setEditing(false);
                     setEditContent(tweet.content);
                   }}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors active:scale-95"
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-200 hover:bg-white/[0.06] transition-colors"
                 >
                   Cancel
-                </button>
-                <button
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.96 }}
                   onClick={handleSaveEdit}
                   disabled={saving || !editContent.trim()}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 transition-all active:scale-95 shadow-lg shadow-indigo-500/20"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-50"
+                  style={{
+                    background: "linear-gradient(135deg, #6366f1, #7c3aed)",
+                    boxShadow: "0 4px 12px rgba(99,102,241,0.3)",
+                  }}
                 >
                   <Check size={14} /> {saving ? "Saving…" : "Save"}
-                </button>
+                </motion.button>
               </div>
-            </div>
+            </motion.div>
           ) : (
             <>
-              <p className="mt-2 text-[13px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
+              <p className="text-[13px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words mb-3">
                 {tweet.content}
               </p>
 
               {/* -- INTERACTION BAR -- */}
-              <div className="mt-4 flex items-center gap-6">
+              <div className="flex items-center gap-5">
                 {/* Reply */}
                 <button
                   onClick={() => console.log("Open comment modal")}
-                  className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-indigo-400 transition-colors duration-200 group active:scale-95 outline-none"
+                  className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-indigo-400 transition-colors duration-200 group/btn"
                 >
-                  <div className="p-1.5 rounded-full transition-colors group-hover:bg-indigo-500/10">
+                  <div className="p-1.5 rounded-full group-hover/btn:bg-indigo-500/10 transition-colors">
                     <MessageCircle
-                      size={17}
-                      className="transition-transform duration-300 group-hover:-rotate-12 group-hover:scale-110"
+                      size={16}
+                      className="group-hover/btn:-rotate-12 group-hover/btn:scale-110 transition-transform duration-300"
                     />
                   </div>
                   <span className="font-semibold tabular-nums">
@@ -312,12 +393,12 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
                 {/* Retweet */}
                 <button
                   onClick={() => console.log("Trigger retweet")}
-                  className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-emerald-400 transition-colors duration-200 group active:scale-95 outline-none"
+                  className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-emerald-400 transition-colors duration-200 group/btn"
                 >
-                  <div className="p-1.5 rounded-full transition-colors group-hover:bg-emerald-500/10">
+                  <div className="p-1.5 rounded-full group-hover/btn:bg-emerald-500/10 transition-colors">
                     <Repeat2
-                      size={18}
-                      className="transition-transform duration-300 group-hover:rotate-180 group-hover:scale-110"
+                      size={17}
+                      className="group-hover/btn:rotate-180 group-hover/btn:scale-110 transition-transform duration-300"
                     />
                   </div>
                   <span className="font-semibold tabular-nums">
@@ -326,28 +407,25 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
                 </button>
 
                 {/* Like */}
-                <button
+                <motion.button
+                  whileTap={{ scale: 0.85 }}
                   onClick={handleToggleLike}
                   disabled={!currentUserId || liking}
-                  className={`flex items-center gap-1.5 text-xs transition-colors duration-200 group active:scale-90 outline-none ${
-                    isLiked
-                      ? "text-rose-500"
-                      : "text-slate-500 hover:text-rose-400"
-                  } ${!currentUserId ? "opacity-50 cursor-not-allowed" : ""}`}
+                  className={`flex items-center gap-1.5 text-xs transition-colors duration-200 group/btn ${isLiked ? "text-rose-500" : "text-slate-600 hover:text-rose-400"} ${!currentUserId ? "opacity-50 cursor-not-allowed" : ""}`}
                 >
                   <div
-                    className={`p-1.5 rounded-full transition-colors ${isLiked ? "bg-rose-500/10" : "group-hover:bg-rose-500/10"}`}
+                    className={`p-1.5 rounded-full transition-colors ${isLiked ? "bg-rose-500/12" : "group-hover/btn:bg-rose-500/10"}`}
                   >
                     <svg
-                      width="17"
-                      height="17"
+                      width="16"
+                      height="16"
                       viewBox="0 0 24 24"
                       fill={isLiked ? "currentColor" : "none"}
                       stroke="currentColor"
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      className={`transition-all duration-400 cubic-bezier(0.4, 0, 0.2, 1) ${isLiked ? "scale-110 drop-shadow-[0_0_6px_rgba(244,63,94,0.4)]" : "scale-100 group-hover:scale-110"}`}
+                      className={`transition-all duration-300 ${isLiked ? "scale-110 drop-shadow-[0_0_5px_rgba(244,63,94,0.5)]" : "scale-100 group-hover/btn:scale-110"}`}
                     >
                       <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
                     </svg>
@@ -357,41 +435,52 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
                   >
                     {likesCount > 0 ? likesCount : ""}
                   </span>
-                </button>
+                </motion.button>
               </div>
             </>
           )}
 
           {confirmDel && !menuOpen && (
-            <div className="mt-4 flex items-center gap-3 px-4 py-3 rounded-xl bg-rose-500/10 border border-rose-500/20 animate-in slide-in-from-top-2 fade-in duration-200">
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={spring}
+              className="mt-4 flex items-center gap-3 px-4 py-3 rounded-xl border border-rose-500/20"
+              style={{ background: "rgba(244,63,94,0.07)" }}
+            >
               <p className="text-xs font-medium text-rose-400 flex-1">
                 Permanently delete this post?
               </p>
               <button
                 onClick={() => setConfirmDel(false)}
-                className="text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors active:scale-95 px-2 py-1"
+                className="text-xs font-bold text-slate-500 hover:text-slate-300 px-2 py-1 transition-colors"
               >
                 Cancel
               </button>
-              <button
+              <motion.button
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
                 onClick={handleDelete}
                 disabled={deleting}
-                className="text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 px-3 py-1.5 rounded-lg disabled:opacity-50 transition-all active:scale-95 shadow-md shadow-rose-500/20"
+                className="text-xs font-bold text-white px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
+                style={{
+                  background: "#e11d48",
+                  boxShadow: "0 4px 12px rgba(225,29,72,0.3)",
+                }}
               >
                 {deleting ? "Deleting…" : "Delete"}
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Tweets page
 // ─────────────────────────────────────────────────────────────────────────────
-
 export default function Tweets() {
   const currentUser = useSelector((s) => s.auth.userData);
   const isAuthenticated = useSelector((s) => s.auth.isAuthenticated);
@@ -413,7 +502,6 @@ export default function Tweets() {
       setLoading(false);
       return;
     }
-
     const fetchTweets = async () => {
       setLoading(true);
       try {
@@ -426,7 +514,6 @@ export default function Tweets() {
         setLoading(false);
       }
     };
-
     fetchTweets();
   }, [currentUser?._id, showToast]);
 
@@ -498,45 +585,97 @@ export default function Tweets() {
   };
 
   return (
-    <div className="min-h-full bg-[#0a0a0f] relative overflow-hidden">
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
+    <div
+      className="min-h-screen relative overflow-hidden"
+      style={{ background: "#050508" }}
+    >
+      <AnimatePresence>
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )}
+      </AnimatePresence>
 
-      {/* background glows */}
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute top-0 right-1/3 w-96 h-96 bg-violet-600/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-1/3 w-96 h-96 bg-indigo-600/5 rounded-full blur-3xl" />
+      {/* Ambient orbs */}
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+        <div
+          className="absolute top-0 right-1/3 w-[500px] h-[400px] opacity-[0.06] mix-blend-screen"
+          style={{
+            background:
+              "radial-gradient(ellipse, rgba(139,92,246,1) 0%, transparent 70%)",
+            filter: "blur(80px)",
+          }}
+        />
+        <div
+          className="absolute bottom-0 left-1/3 w-[400px] h-[400px] opacity-[0.05] mix-blend-screen"
+          style={{
+            background:
+              "radial-gradient(ellipse, rgba(99,102,241,1) 0%, transparent 70%)",
+            filter: "blur(100px)",
+          }}
+        />
       </div>
 
       <div className="relative z-10 max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         {/* ── Page header ── */}
-        <div className="flex items-center gap-4 animate-in fade-in slide-in-from-left-4 duration-500">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-500/15 border border-indigo-500/20 flex items-center justify-center shadow-lg shadow-indigo-500/10">
-            <MessageSquare size={20} className="text-indigo-400" />
+        <motion.div
+          initial={{ opacity: 0, y: -12, filter: "blur(6px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          transition={spring}
+          className="flex items-center gap-4"
+        >
+          <div
+            className="w-12 h-12 rounded-2xl flex items-center justify-center border border-indigo-500/20"
+            style={{
+              background: "rgba(99,102,241,0.1)",
+              boxShadow: "0 0 20px rgba(99,102,241,0.2)",
+            }}
+          >
+            <Feather size={20} className="text-indigo-400" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-100 tracking-tight">
+            <h1 className="text-2xl font-black text-white tracking-tight">
               Community
             </h1>
-            <p className="text-sm font-medium text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
               Your posts and updates
             </p>
           </div>
-        </div>
+        </motion.div>
 
         {/* ── Compose box ── */}
         {isAuthenticated ? (
-          <div className="bg-[#0f1117] border border-white/5 rounded-2xl overflow-hidden transition-all duration-500 focus-within:border-indigo-500/40 focus-within:shadow-[0_0_30px_rgba(99,102,241,0.1)] focus-within:-translate-y-1 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent" />
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ ...spring, delay: 0.08 }}
+            className="rounded-2xl overflow-hidden border transition-all duration-500 focus-within:-translate-y-0.5"
+            style={{
+              background: "rgba(10,10,15,0.9)",
+              backdropFilter: "blur(20px)",
+              borderColor: "rgba(255,255,255,0.07)",
+            }}
+          >
+            {/* Top shimmer */}
+            <div
+              className="h-px w-full"
+              style={{
+                background:
+                  "linear-gradient(90deg, transparent, rgba(99,102,241,0.5), transparent)",
+              }}
+            />
             <form onSubmit={handlePost} className="p-5 sm:p-6">
               <div className="flex gap-4">
                 {/* Avatar */}
-                <div className="shrink-0 w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-md">
+                <div
+                  className="shrink-0 w-10 h-10 rounded-full overflow-hidden flex items-center justify-center shadow-md"
+                  style={{
+                    background: "linear-gradient(135deg, #6366f1, #7c3aed)",
+                  }}
+                >
                   {currentUser?.avatar ? (
                     <img
                       src={currentUser.avatar}
@@ -560,62 +699,127 @@ export default function Tweets() {
                     placeholder="Share something with your community…"
                     rows={2}
                     maxLength={500}
-                    className="w-full bg-transparent text-[15px] text-slate-200 placeholder-slate-500 outline-none resize-none leading-relaxed focus:ring-0 mt-1"
+                    className="w-full bg-transparent text-[15px] text-slate-200 placeholder-slate-600 outline-none resize-none leading-relaxed mt-1"
                   />
 
-                  {content.length > 0 && (
-                    <div className="flex items-center justify-between pt-3 border-t border-white/5 animate-in fade-in duration-300">
-                      <span
-                        className={`text-xs font-semibold tabular-nums transition-colors ${content.length > 480 ? "text-rose-400" : "text-slate-600"}`}
+                  <AnimatePresence>
+                    {content.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="flex items-center justify-between pt-3 border-t border-white/[0.05]"
                       >
-                        {content.length}{" "}
-                        <span className="opacity-50">/ 500</span>
-                      </span>
-                      <div className="flex items-center gap-2.5">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setContent("");
-                            if (textareaRef.current)
-                              textareaRef.current.style.height = "auto";
-                          }}
-                          className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all active:scale-95"
-                        >
-                          Clear
-                        </button>
-                        <button
-                          type="submit"
-                          disabled={posting || !content.trim()}
-                          className="flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-indigo-500/25 active:scale-95"
-                        >
-                          <Send
-                            size={14}
-                            strokeWidth={2.5}
-                            className={posting ? "animate-pulse" : ""}
-                          />
-                          {posting ? "Posting…" : "Post"}
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={`text-xs font-bold tabular-nums transition-colors ${content.length > 480 ? "text-rose-400" : "text-slate-600"}`}
+                          >
+                            {content.length}{" "}
+                            <span className="opacity-50">/ 500</span>
+                          </span>
+                          {/* Progress ring */}
+                          <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 20 20"
+                            className="-rotate-90"
+                          >
+                            <circle
+                              cx="10"
+                              cy="10"
+                              r="8"
+                              fill="none"
+                              stroke="rgba(255,255,255,0.08)"
+                              strokeWidth="2"
+                            />
+                            <circle
+                              cx="10"
+                              cy="10"
+                              r="8"
+                              fill="none"
+                              stroke={
+                                content.length > 480 ? "#f43f5e" : "#6366f1"
+                              }
+                              strokeWidth="2"
+                              strokeDasharray={`${(content.length / 500) * 50.27} 50.27`}
+                              strokeLinecap="round"
+                              className="transition-all duration-300"
+                            />
+                          </svg>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <motion.button
+                            whileHover={{ scale: 1.04 }}
+                            whileTap={{ scale: 0.96 }}
+                            type="button"
+                            onClick={() => {
+                              setContent("");
+                              if (textareaRef.current)
+                                textareaRef.current.style.height = "auto";
+                            }}
+                            className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-all"
+                          >
+                            Clear
+                          </motion.button>
+                          <motion.button
+                            whileHover={{
+                              scale: 1.04,
+                              boxShadow: "0 8px 20px rgba(99,102,241,0.4)",
+                            }}
+                            whileTap={{ scale: 0.96 }}
+                            type="submit"
+                            disabled={posting || !content.trim()}
+                            className="flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-black text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            style={{
+                              background:
+                                "linear-gradient(135deg, #6366f1, #7c3aed)",
+                              boxShadow: "0 4px 14px rgba(99,102,241,0.35)",
+                            }}
+                          >
+                            <Send
+                              size={13}
+                              strokeWidth={2.5}
+                              className={posting ? "animate-pulse" : ""}
+                            />
+                            {posting ? "Posting…" : "Post"}
+                          </motion.button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
             </form>
-          </div>
+          </motion.div>
         ) : (
-          <div className="bg-[#0f1117] border border-white/5 rounded-2xl p-6 text-center animate-in fade-in duration-700">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="rounded-2xl p-6 text-center border border-white/[0.06]"
+            style={{
+              background: "rgba(10,10,15,0.85)",
+              backdropFilter: "blur(20px)",
+            }}
+          >
             <p className="text-sm font-medium text-slate-400">
               Sign in to post to your community
             </p>
-          </div>
+          </motion.div>
         )}
 
         {/* ── Tweets feed ── */}
         {loading ? (
           <TweetSkeleton />
         ) : tweets.length === 0 ? (
-          <div className="py-20 text-center space-y-4 animate-in zoom-in-95 fade-in duration-500">
-            <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto shadow-inner">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="py-20 text-center space-y-4"
+          >
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto border border-white/[0.07]"
+              style={{ background: "rgba(255,255,255,0.03)" }}
+            >
               <MessageSquare
                 size={28}
                 className="text-slate-600"
@@ -624,23 +828,33 @@ export default function Tweets() {
             </div>
             <div>
               <p className="text-sm font-bold text-slate-300">No posts yet</p>
-              <p className="text-xs font-medium text-slate-500 mt-1">
+              <p className="text-xs font-medium text-slate-600 mt-1">
                 Share your first update with the community above.
               </p>
             </div>
-          </div>
+          </motion.div>
         ) : (
-          <div className="space-y-4">
-            {tweets.map((tweet) => (
-              <TweetCard
-                key={tweet._id}
-                tweet={tweet}
-                currentUserId={currentUser?._id}
-                onDelete={handleDelete}
-                onUpdate={handleUpdate}
-              />
-            ))}
-          </div>
+          <motion.div
+            className="space-y-4"
+            initial="hidden"
+            animate="show"
+            variants={{
+              hidden: { opacity: 0 },
+              show: { opacity: 1, transition: { staggerChildren: 0.06 } },
+            }}
+          >
+            <AnimatePresence mode="popLayout">
+              {tweets.map((tweet) => (
+                <TweetCard
+                  key={tweet._id}
+                  tweet={tweet}
+                  currentUserId={currentUser?._id}
+                  onDelete={handleDelete}
+                  onUpdate={handleUpdate}
+                />
+              ))}
+            </AnimatePresence>
+          </motion.div>
         )}
       </div>
     </div>

@@ -7,44 +7,62 @@ import { login, setLoading } from "../store/authSlice";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
 
+const spring = { type: "spring", stiffness: 400, damping: 30, mass: 0.8 };
+
 function AuthLoader() {
   return (
-    <div className="flex items-center justify-center h-screen w-full bg-[#050505] relative overflow-hidden">
-      {/* Deep Ambient Glow */}
-      <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+    <div
+      className="flex items-center justify-center h-screen w-full relative overflow-hidden"
+      style={{ background: "#050508" }}
+    >
+      {/* Ambient orbs */}
+      <div className="absolute inset-0 pointer-events-none">
         <motion.div
-          animate={{ scale: [1, 1.2, 1], opacity: [0.1, 0.3, 0.1] }}
+          animate={{ scale: [1, 1.3, 1], opacity: [0.12, 0.28, 0.12] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          className="w-[400px] h-[400px] bg-indigo-600/20 blur-[100px] rounded-full mix-blend-screen"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-600/20 blur-[120px] rounded-full mix-blend-screen"
+        />
+        <motion.div
+          animate={{ scale: [1, 1.2, 1], opacity: [0.08, 0.18, 0.08] }}
+          transition={{
+            duration: 6,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1,
+          }}
+          className="absolute top-1/3 left-1/3 w-[300px] h-[300px] bg-violet-600/15 blur-[100px] rounded-full mix-blend-screen"
         />
       </div>
 
       <div className="flex flex-col items-center gap-8 relative z-10">
-        {/* Orbital Spinner */}
+        {/* Orbital spinner */}
         <div className="relative w-20 h-20 flex items-center justify-center">
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-            className="absolute inset-0 rounded-full border-t-[3px] border-indigo-500 border-r-[3px] border-transparent opacity-80 shadow-[0_0_15px_rgba(99,102,241,0.2)]"
+            className="absolute inset-0 rounded-full border-t-[2px] border-indigo-500 border-r-[2px] border-transparent"
+            style={{ filter: "drop-shadow(0 0 8px rgba(99,102,241,0.6))" }}
           />
           <motion.div
             animate={{ rotate: -360 }}
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            className="absolute inset-2 rounded-full border-b-[3px] border-purple-500 border-l-[3px] border-transparent opacity-60 shadow-[0_0_15px_rgba(168,85,247,0.2)]"
+            className="absolute inset-3 rounded-full border-b-[2px] border-violet-500 border-l-[2px] border-transparent"
+            style={{ filter: "drop-shadow(0 0 6px rgba(139,92,246,0.6))" }}
           />
           <motion.div
-            animate={{ scale: [0.8, 1.2, 0.8], opacity: [0.5, 1, 0.5] }}
+            animate={{ scale: [0.8, 1.2, 0.8], opacity: [0.6, 1, 0.6] }}
             transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-            className="w-4 h-4 rounded-full bg-indigo-400 shadow-[0_0_20px_rgba(99,102,241,1)]"
+            className="w-3 h-3 rounded-full bg-indigo-400"
+            style={{ boxShadow: "0 0 20px rgba(99,102,241,1)" }}
           />
         </div>
 
-        {/* Label */}
         <div className="flex flex-col items-center gap-3">
           <motion.span
             animate={{ opacity: [0.4, 1, 0.4] }}
             transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            className="text-xs font-black tracking-[0.3em] text-indigo-300 uppercase drop-shadow-[0_0_8px_rgba(165,180,252,0.5)]"
+            className="text-xs font-black tracking-[0.3em] text-indigo-300 uppercase"
+            style={{ textShadow: "0 0 20px rgba(165,180,252,0.5)" }}
           >
             Authenticating
           </motion.span>
@@ -53,7 +71,7 @@ function AuthLoader() {
               <motion.div
                 key={i}
                 animate={{
-                  y: [0, -4, 0],
+                  y: [0, -5, 0],
                   opacity: [0.3, 1, 0.3],
                   scale: [0.8, 1.2, 0.8],
                 }}
@@ -63,7 +81,8 @@ function AuthLoader() {
                   delay: i * 0.15,
                   ease: "easeInOut",
                 }}
-                className="w-1.5 h-1.5 rounded-full bg-indigo-400 shadow-[0_0_8px_rgba(165,180,252,0.8)]"
+                className="w-1.5 h-1.5 rounded-full bg-indigo-400"
+                style={{ boxShadow: "0 0 8px rgba(165,180,252,0.8)" }}
               />
             ))}
           </div>
@@ -76,9 +95,6 @@ function AuthLoader() {
 export default function AppLayout() {
   const dispatch = useDispatch();
   const isLoading = useSelector((s) => s.auth.isLoading);
-
-  //  track whether this is the very first mount so the entrance animation
-  // only runs once — not on every client-side navigation.
   const hasAnimated = useRef(false);
 
   useEffect(() => {
@@ -97,38 +113,50 @@ export default function AppLayout() {
 
   if (isLoading) return <AuthLoader />;
 
-  // Animate only on the first render after auth check, never again
   const shouldAnimate = !hasAnimated.current;
   if (shouldAnimate) hasAnimated.current = true;
 
   return (
     <motion.div
-      //animating on every navigation — now only animates on first mount
-      initial={
-        shouldAnimate ? { opacity: 0, scale: 0.98, filter: "blur(8px)" } : false
-      }
-      animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-      transition={{
-        type: "spring",
-        stiffness: 300,
-        damping: 30,
-        duration: 0.6,
-      }}
-      className="flex h-screen w-full overflow-hidden bg-[#050505] relative selection:bg-indigo-500/30 selection:text-indigo-200"
+      initial={shouldAnimate ? { opacity: 0, scale: 0.99 } : false}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="flex h-screen w-full overflow-hidden relative selection:bg-indigo-500/30 selection:text-indigo-200"
+      style={{ background: "#050508" }}
     >
       {/* Global ambient background */}
-      <div className="absolute inset-0 z-0 pointer-events-none flex justify-center opacity-20 mix-blend-screen">
-        <div className="absolute top-[-20%] left-[-10%] w-[800px] h-[800px] bg-indigo-600/10 blur-[150px] rounded-full" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-purple-600/10 blur-[120px] rounded-full" />
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        <div
+          className="absolute top-[-30%] left-[-10%] w-[700px] h-[700px] rounded-full opacity-30 mix-blend-screen"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)",
+            filter: "blur(60px)",
+          }}
+        />
+        <div
+          className="absolute bottom-[-30%] right-[-10%] w-[600px] h-[600px] rounded-full opacity-20 mix-blend-screen"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)",
+            filter: "blur(80px)",
+          }}
+        />
+        {/* Grain overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E\")",
+          }}
+        />
       </div>
 
-      {/* Layout */}
       <div className="relative z-10 flex h-full w-full">
         <Sidebar />
-        <div className="flex flex-col flex-1 min-w-0 overflow-hidden relative z-10">
+        <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
           <Navbar />
-          <main className="flex-1 overflow-y-auto relative z-0 scroll-smooth">
+          <main className="flex-1 overflow-y-auto scroll-smooth">
             <Outlet />
           </main>
         </div>

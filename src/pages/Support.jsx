@@ -14,6 +14,7 @@ import {
   CheckCircle,
   Loader2,
   ExternalLink,
+  Sparkles,
 } from "lucide-react";
 
 const spring = { type: "spring", stiffness: 380, damping: 28 };
@@ -79,42 +80,45 @@ const FAQS = [
   },
 ];
 
-const ACCENT_COLORS = {
+const ACCENT = {
   indigo: {
-    bg: "bg-indigo-500/10",
-    border: "border-indigo-500/20",
     text: "text-indigo-400",
-    line: "via-indigo-500/30",
+    bg: "rgba(99,102,241,0.08)",
+    border: "rgba(99,102,241,0.2)",
+    line: "rgba(99,102,241,0.5)",
   },
   violet: {
-    bg: "bg-violet-500/10",
-    border: "border-violet-500/20",
     text: "text-violet-400",
-    line: "via-violet-500/30",
+    bg: "rgba(139,92,246,0.08)",
+    border: "rgba(139,92,246,0.2)",
+    line: "rgba(139,92,246,0.5)",
   },
   emerald: {
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/20",
     text: "text-emerald-400",
-    line: "via-emerald-500/30",
+    bg: "rgba(16,185,129,0.08)",
+    border: "rgba(16,185,129,0.2)",
+    line: "rgba(16,185,129,0.5)",
   },
 };
 
 // ─── FAQ Item ─────────────────────────────────────────────────────────────────
 function FaqItem({ q, a, accent }) {
   const [open, setOpen] = useState(false);
-  const c = ACCENT_COLORS[accent];
+  const c = ACCENT[accent];
+
   return (
-    <div
-      className={`rounded-xl border transition-all duration-300 overflow-hidden ${
-        open
-          ? `${c.bg} ${c.border}`
-          : "bg-[#0a0a0f] border-white/[0.06] hover:border-white/10"
-      }`}
+    <motion.div
+      layout
+      className="rounded-xl overflow-hidden border transition-all duration-300"
+      style={{
+        background: open ? c.bg : "rgba(255,255,255,0.02)",
+        borderColor: open ? c.border : "rgba(255,255,255,0.06)",
+      }}
     >
-      <button
+      <motion.button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left"
+        whileHover={{ backgroundColor: "rgba(255,255,255,0.02)" }}
+        className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left transition-colors"
       >
         <span
           className={`text-sm font-semibold transition-colors duration-200 ${open ? c.text : "text-slate-300"}`}
@@ -128,7 +132,7 @@ function FaqItem({ q, a, accent }) {
         >
           <ChevronDown size={15} className={open ? c.text : "text-slate-600"} />
         </motion.div>
-      </button>
+      </motion.button>
       <AnimatePresence initial={false}>
         {open && (
           <motion.div
@@ -143,7 +147,7 @@ function FaqItem({ q, a, accent }) {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }
 
@@ -175,69 +179,135 @@ function ContactForm() {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={spring}
-      className="bg-[#0f1117] border border-white/[0.07] rounded-2xl overflow-hidden shadow-lg"
+      transition={{ ...spring, delay: 0.3 }}
+      className="rounded-[1.75rem] overflow-hidden border border-white/[0.06]"
+      style={{
+        background: "rgba(10,10,15,0.85)",
+        backdropFilter: "blur(20px)",
+        boxShadow: "0 16px 50px rgba(0,0,0,0.4)",
+      }}
     >
-      <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-violet-500/30 to-transparent opacity-60" />
-      <div className="px-6 py-5 border-b border-white/[0.05] flex items-center gap-3 bg-white/[0.02]">
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center border bg-violet-500/10 border-violet-500/20">
+      {/* Violet top line */}
+      <div
+        className="h-px w-full"
+        style={{
+          background:
+            "linear-gradient(90deg, transparent, rgba(139,92,246,0.6), transparent)",
+        }}
+      />
+
+      <div
+        className="px-6 py-5 border-b border-white/[0.05] flex items-center gap-3"
+        style={{ background: "rgba(255,255,255,0.01)" }}
+      >
+        <div
+          className="w-8 h-8 rounded-xl flex items-center justify-center border border-violet-500/20"
+          style={{ background: "rgba(139,92,246,0.1)" }}
+        >
           <MessageSquarePlus size={15} className="text-violet-400" />
         </div>
-        <h2 className="text-sm font-bold text-slate-200">Send a Message</h2>
+        <h2 className="text-sm font-bold text-slate-200">Send us a Message</h2>
+        <span
+          className="ml-auto text-[10px] font-black text-violet-400 uppercase tracking-widest px-2 py-0.5 rounded-lg border border-violet-500/20"
+          style={{ background: "rgba(139,92,246,0.08)" }}
+        >
+          Support
+        </span>
       </div>
+
       <div className="p-6 space-y-4">
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">
             Subject
           </label>
           <input
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             placeholder="What's this about?"
-            className="w-full bg-[#0a0a0f] border border-white/[0.08] focus:border-violet-500/50 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 outline-none transition-all focus:shadow-lg focus:shadow-violet-500/10"
+            className="w-full rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 outline-none transition-all border"
+            style={{
+              background: "rgba(5,5,8,0.9)",
+              borderColor: "rgba(255,255,255,0.08)",
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = "rgba(139,92,246,0.5)";
+              e.target.style.boxShadow = "0 0 0 3px rgba(139,92,246,0.08)";
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = "rgba(255,255,255,0.08)";
+              e.target.style.boxShadow = "none";
+            }}
           />
         </div>
+
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">
             Message
           </label>
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Describe your issue or feedback..."
+            placeholder="Describe your issue or feedback in detail…"
             rows={5}
-            className="w-full bg-[#0a0a0f] border border-white/[0.08] focus:border-violet-500/50 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-600 outline-none transition-all focus:shadow-lg focus:shadow-violet-500/10 resize-none"
+            className="w-full rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-600 outline-none transition-all border resize-none leading-relaxed"
+            style={{
+              background: "rgba(5,5,8,0.9)",
+              borderColor: "rgba(255,255,255,0.08)",
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = "rgba(139,92,246,0.5)";
+              e.target.style.boxShadow = "0 0 0 3px rgba(139,92,246,0.08)";
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = "rgba(255,255,255,0.08)";
+              e.target.style.boxShadow = "none";
+            }}
           />
         </div>
-        <button
-          onClick={handleSubmit}
-          disabled={sending || !subject.trim() || !message.trim()}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 shadow-lg shadow-violet-500/25 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {sending ? (
-            <>
-              <Loader2 size={14} className="animate-spin" /> Sending…
-            </>
-          ) : sent ? (
-            <>
-              <CheckCircle size={14} /> Sent!
-            </>
-          ) : (
-            <>
-              <Mail size={14} /> Send Message
-            </>
-          )}
-        </button>
-        {sent && (
-          <motion.p
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-xs text-emerald-400 font-medium flex items-center gap-1.5"
+
+        <div className="flex items-center justify-between gap-4">
+          <AnimatePresence>
+            {sent && (
+              <motion.p
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0 }}
+                className="text-xs text-emerald-400 font-medium flex items-center gap-1.5"
+              >
+                <CheckCircle size={12} /> Message received — we'll get back to
+                you soon.
+              </motion.p>
+            )}
+          </AnimatePresence>
+          <motion.button
+            whileHover={{
+              scale: 1.03,
+              boxShadow: "0 10px 24px rgba(139,92,246,0.4)",
+            }}
+            whileTap={{ scale: 0.97 }}
+            onClick={handleSubmit}
+            disabled={sending || !subject.trim() || !message.trim()}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white ml-auto transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              background: "linear-gradient(135deg, #7c3aed, #6366f1)",
+              boxShadow: "0 6px 18px rgba(124,58,237,0.35)",
+            }}
           >
-            <CheckCircle size={12} /> Message received — we'll get back to you
-            soon.
-          </motion.p>
-        )}
+            {sending ? (
+              <>
+                <Loader2 size={14} className="animate-spin" /> Sending…
+              </>
+            ) : sent ? (
+              <>
+                <CheckCircle size={14} /> Sent!
+              </>
+            ) : (
+              <>
+                <Mail size={14} /> Send Message
+              </>
+            )}
+          </motion.button>
+        </div>
       </div>
     </motion.div>
   );
@@ -266,24 +336,81 @@ export default function Support() {
   ];
 
   return (
-    <div className="min-h-full bg-[#0a0a0f] p-4 sm:p-6 overflow-x-hidden">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <div
+      className="min-h-screen p-4 sm:p-6 overflow-x-hidden"
+      style={{ background: "#050508" }}
+    >
+      {/* Ambient orbs */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <div
+          className="absolute top-0 left-1/3 w-[500px] h-[400px] opacity-[0.06] mix-blend-screen"
+          style={{
+            background:
+              "radial-gradient(ellipse, rgba(99,102,241,1) 0%, transparent 70%)",
+            filter: "blur(80px)",
+          }}
+        />
+        <div
+          className="absolute bottom-0 right-1/4 w-[400px] h-[400px] opacity-[0.05] mix-blend-screen"
+          style={{
+            background:
+              "radial-gradient(ellipse, rgba(139,92,246,1) 0%, transparent 70%)",
+            filter: "blur(100px)",
+          }}
+        />
+      </div>
+
+      <div className="max-w-2xl mx-auto space-y-5 relative z-10">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: -12, filter: "blur(6px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={spring}
-          className="flex items-center gap-4 group"
+          className="flex items-center gap-4"
         >
-          <div className="w-11 h-11 rounded-xl bg-sky-500/15 border border-sky-500/20 flex items-center justify-center group-hover:rotate-12 group-hover:scale-110 transition-transform duration-500 shadow-lg shadow-sky-500/10">
+          <div
+            className="w-12 h-12 rounded-2xl flex items-center justify-center border border-sky-500/20"
+            style={{
+              background: "rgba(14,165,233,0.08)",
+              boxShadow: "0 0 20px rgba(14,165,233,0.15)",
+            }}
+          >
             <HelpCircle size={20} className="text-sky-400" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-100 tracking-tight">
+            <h1 className="text-2xl font-black text-white tracking-tight">
               Help & Support
             </h1>
-            <p className="text-xs text-slate-500 font-medium">
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
               Find answers or get in touch
+            </p>
+          </div>
+        </motion.div>
+
+        {/* Hero banner */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...spring, delay: 0.05 }}
+          className="relative rounded-2xl p-6 overflow-hidden border border-white/[0.06]"
+          style={{
+            background: "rgba(10,10,15,0.85)",
+            backdropFilter: "blur(20px)",
+          }}
+        >
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(ellipse at top left, rgba(99,102,241,0.12) 0%, transparent 60%)",
+            }}
+          />
+          <div className="relative z-10 flex items-center gap-3">
+            <Sparkles size={18} className="text-indigo-400 shrink-0" />
+            <p className="text-sm text-slate-300">
+              <span className="font-bold text-white">Quick tip:</span> Most
+              answers are in the FAQ below. If you still need help, send us a
+              message and we'll respond within 24 hours.
             </p>
           </div>
         </motion.div>
@@ -292,56 +419,78 @@ export default function Support() {
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ ...spring, delay: 0.05 }}
+          transition={{ ...spring, delay: 0.08 }}
           className="grid grid-cols-3 gap-3"
         >
-          {quickLinks.map((l) => (
-            <a
+          {quickLinks.map((l, i) => (
+            <motion.a
               key={l.label}
               href={l.href}
               target={l.external ? "_blank" : undefined}
               rel={l.external ? "noopener noreferrer" : undefined}
-              className="group flex flex-col items-center gap-2 p-4 rounded-2xl bg-[#0f1117] border border-white/[0.07] hover:border-indigo-500/30 hover:bg-white/[0.03] transition-all duration-300 hover:-translate-y-0.5 shadow-lg text-center"
+              whileHover={{ y: -3, scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              transition={spring}
+              className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border border-white/[0.07] text-center transition-all duration-300"
+              style={{
+                background: "rgba(10,10,15,0.85)",
+                backdropFilter: "blur(20px)",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
+              }}
             >
-              <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/[0.08] flex items-center justify-center group-hover:border-indigo-500/20 group-hover:bg-indigo-500/10 transition-all duration-300">
-                <l.icon
-                  size={16}
-                  className="text-slate-400 group-hover:text-indigo-400 transition-colors"
-                />
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center border border-white/[0.08] group-hover:border-indigo-500/20 transition-all"
+                style={{ background: "rgba(255,255,255,0.04)" }}
+              >
+                <l.icon size={16} className="text-slate-400" />
               </div>
-              <span className="text-xs font-semibold text-slate-500 group-hover:text-slate-300 transition-colors flex items-center gap-0.5">
+              <span className="text-xs font-semibold text-slate-500 flex items-center gap-0.5">
                 {l.label}
-                {l.external && (
-                  <ExternalLink size={10} className="opacity-50" />
-                )}
+                {l.external && <ExternalLink size={9} className="opacity-50" />}
               </span>
-            </a>
+            </motion.a>
           ))}
         </motion.div>
 
         {/* FAQs */}
         {FAQS.map((section, si) => {
-          const c = ACCENT_COLORS[section.accent];
+          const c = ACCENT[section.accent];
           return (
             <motion.div
               key={section.category}
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ ...spring, delay: 0.1 + si * 0.07 }}
-              className="bg-[#0f1117] border border-white/[0.07] rounded-2xl overflow-hidden shadow-lg"
+              transition={{ ...spring, delay: 0.12 + si * 0.07 }}
+              className="rounded-[1.75rem] overflow-hidden border border-white/[0.06]"
+              style={{
+                background: "rgba(10,10,15,0.85)",
+                backdropFilter: "blur(20px)",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.35)",
+              }}
             >
               <div
-                className={`h-[2px] w-full bg-gradient-to-r from-transparent ${c.line} to-transparent opacity-60`}
+                className="h-px w-full"
+                style={{
+                  background: `linear-gradient(90deg, transparent, ${c.line}, transparent)`,
+                  opacity: 0.7,
+                }}
               />
-              <div className="px-6 py-5 border-b border-white/[0.05] flex items-center gap-3 bg-white/[0.02]">
+              <div
+                className="px-6 py-5 border-b border-white/[0.05] flex items-center gap-3"
+                style={{ background: "rgba(255,255,255,0.01)" }}
+              >
                 <div
-                  className={`w-8 h-8 rounded-xl flex items-center justify-center border ${c.bg} ${c.border}`}
+                  className="w-8 h-8 rounded-xl flex items-center justify-center border"
+                  style={{ background: c.bg, borderColor: c.border }}
                 >
                   <section.icon size={15} className={c.text} />
                 </div>
                 <h2 className="text-sm font-bold text-slate-200">
                   {section.category}
                 </h2>
+                <span className="ml-auto text-xs text-slate-600 font-medium">
+                  {section.items.length} questions
+                </span>
               </div>
               <div className="p-4 space-y-2">
                 {section.items.map((item) => (
