@@ -21,7 +21,6 @@ import Playlists from "./pages/Playlists.jsx";
 import PlaylistDetail from "./pages/PlaylistDetail.jsx";
 import PageTransition from "./components/PageTransition.jsx";
 import Notifications from "./pages/Notifications.jsx";
-import Settings from "./pages/Settings.jsx";
 import Support from "./pages/Support.jsx";
 
 function ProtectedRoute({ children }) {
@@ -147,14 +146,6 @@ function AnimatedRoutes() {
             element={
               <ProtectedRoute>
                 <Notifications />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="settings"
-            element={
-              <ProtectedRoute>
-                <Settings />
               </ProtectedRoute>
             }
           />

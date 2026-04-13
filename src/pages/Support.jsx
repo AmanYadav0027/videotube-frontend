@@ -153,8 +153,10 @@ function FaqItem({ q, a, accent }) {
 
 // ─── Contact form ─────────────────────────────────────────────────────────────
 function ContactForm() {
+  const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 
@@ -163,7 +165,7 @@ function ContactForm() {
     if (!subject.trim() || !message.trim()) return;
     setSending(true);
     try {
-      await axios.post("/api/v2/support/contact", { subject, message });
+      await axios.post("/api/v2/support/contact", { email, subject, message });
       setSent(true);
       setSubject("");
       setMessage("");
@@ -216,6 +218,30 @@ function ContactForm() {
       </div>
 
       <div className="p-6 space-y-4">
+        <div className="space-y-1.5">
+          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+            Your Email
+          </label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="How can we reach you?"
+            className="w-full rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 outline-none transition-all border"
+            style={{
+              background: "rgba(5,5,8,0.9)",
+              borderColor: "rgba(255,255,255,0.08)",
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = "rgba(139,92,246,0.5)";
+              e.target.style.boxShadow = "0 0 0 3px rgba(139,92,246,0.08)";
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = "rgba(255,255,255,0.08)";
+              e.target.style.boxShadow = "none";
+            }}
+          />
+        </div>
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">
             Subject
@@ -319,22 +345,6 @@ export default function Support() {
     document.title = "Support — VideoTube";
   }, []);
 
-  const quickLinks = [
-    {
-      label: "GitHub Repo",
-      icon: Github,
-      href: "https://github.com",
-      external: true,
-    },
-    { label: "Documentation", icon: BookOpen, href: "#", external: false },
-    {
-      label: "Email Support",
-      icon: Mail,
-      href: "mailto:support@videotube.dev",
-      external: true,
-    },
-  ];
-
   return (
     <div
       className="min-h-screen p-4 sm:p-6 overflow-x-hidden"
@@ -413,43 +423,6 @@ export default function Support() {
               message and we'll respond within 24 hours.
             </p>
           </div>
-        </motion.div>
-
-        {/* Quick links */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ ...spring, delay: 0.08 }}
-          className="grid grid-cols-3 gap-3"
-        >
-          {quickLinks.map((l, i) => (
-            <motion.a
-              key={l.label}
-              href={l.href}
-              target={l.external ? "_blank" : undefined}
-              rel={l.external ? "noopener noreferrer" : undefined}
-              whileHover={{ y: -3, scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
-              transition={spring}
-              className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border border-white/[0.07] text-center transition-all duration-300"
-              style={{
-                background: "rgba(10,10,15,0.85)",
-                backdropFilter: "blur(20px)",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.25)",
-              }}
-            >
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center border border-white/[0.08] group-hover:border-indigo-500/20 transition-all"
-                style={{ background: "rgba(255,255,255,0.04)" }}
-              >
-                <l.icon size={16} className="text-slate-400" />
-              </div>
-              <span className="text-xs font-semibold text-slate-500 flex items-center gap-0.5">
-                {l.label}
-                {l.external && <ExternalLink size={9} className="opacity-50" />}
-              </span>
-            </motion.a>
-          ))}
         </motion.div>
 
         {/* FAQs */}

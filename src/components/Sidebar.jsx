@@ -34,7 +34,6 @@ const ROUTE_MAP = {
   healthcheck: "/healthcheck",
   notifications: "/notifications",
   support: "/support",
-  settings: "/settings",
   about: "/about",
 };
 
@@ -47,7 +46,6 @@ const PROTECTED = new Set([
   "upload",
   "dashboard",
   "notifications",
-  "settings",
 ]);
 
 const PRIMARY_NAV = [
@@ -65,7 +63,6 @@ const PRIMARY_NAV = [
 const SECONDARY_NAV = [
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "support", label: "Support", icon: HelpCircle },
-  { id: "settings", label: "Settings", icon: Settings },
 ];
 
 // ─── NavItem ──────────────────────────────────────────────────────────────────
