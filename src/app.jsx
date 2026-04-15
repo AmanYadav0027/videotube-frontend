@@ -22,6 +22,8 @@ import PlaylistDetail from "./pages/PlaylistDetail.jsx";
 import PageTransition from "./components/PageTransition.jsx";
 import Notifications from "./pages/Notifications.jsx";
 import Support from "./pages/Support.jsx";
+import VerifyEmail from "./pages/verifyEmail.jsx";
+import VerifyEmailSent from "./pages/VerifyEmailSent.jsx";
 
 function ProtectedRoute({ children }) {
   const isAuthenticated = useSelector((s) => s.auth.isAuthenticated);
@@ -153,6 +155,8 @@ function AnimatedRoutes() {
           {/* Public system */}
           <Route path="healthcheck" element={<Healthcheck />} />
           <Route path="support" element={<Support />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/verify-email-sent" element={<VerifyEmailSent />} />
 
           {/* 404 */}
           <Route path="*" element={<NotFound />} />
