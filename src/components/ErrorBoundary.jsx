@@ -34,7 +34,7 @@ export default class ErrorBoundary extends Component {
     if (this.state.hasError) {
       return (
         <div
-          className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden selection:bg-rose-500/30 selection:text-rose-200"
+          className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden theme-rose"
           style={{ background: "#050508" }}
         >
           {/* Ambient orbs */}
@@ -42,7 +42,7 @@ export default class ErrorBoundary extends Component {
             <motion.div
               animate={{ scale: [1, 1.3, 1], opacity: [0.15, 0.35, 0.15] }}
               transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute top-1/3 left-1/3 w-[600px] h-[600px] rounded-full mix-blend-screen"
+              className="absolute top-1/3 left-1/3 w-[600px] h-[600px] rounded-full "
               style={{
                 background:
                   "radial-gradient(circle, rgba(244,63,94,0.15) 0%, transparent 70%)",
@@ -57,7 +57,7 @@ export default class ErrorBoundary extends Component {
                 ease: "easeInOut",
                 delay: 2,
               }}
-              className="absolute bottom-1/3 right-1/3 w-[400px] h-[400px] rounded-full mix-blend-screen"
+              className="absolute bottom-1/3 right-1/3 w-[400px] h-[400px] rounded-full "
               style={{
                 background:
                   "radial-gradient(circle, rgba(236,72,153,0.12) 0%, transparent 70%)",
@@ -125,7 +125,7 @@ export default class ErrorBoundary extends Component {
                 </motion.div>
 
                 {/* Text */}
-                <motion.div variants={itemVariants} className="space-y-2">
+                <motion.div variants={itemVariants} className=" space-y-2">
                   <h1 className="text-2xl font-black text-white tracking-tight">
                     System Exception
                   </h1>
@@ -137,7 +137,7 @@ export default class ErrorBoundary extends Component {
 
                 {/* Error block */}
                 {this.state.error?.message && (
-                  <motion.div variants={itemVariants} className="w-full">
+                  <motion.div variants={itemVariants} className=" w-full">
                     <div
                       className="rounded-2xl p-4 text-left overflow-x-auto border border-rose-500/[0.12]"
                       style={{

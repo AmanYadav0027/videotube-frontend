@@ -68,11 +68,11 @@ export default function HistoryPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#050505] p-4 sm:p-6 lg:p-8 relative overflow-x-hidden selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div className="min-h-screen bg-[#050505] p-4 sm:p-6 lg:p-8 relative overflow-x-hidden ">
       {/* Ambient orbs */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div
-          className="absolute top-[-10%] left-[10%] w-[500px] h-[500px] rounded-full opacity-25 mix-blend-screen"
+          className="absolute top-[-10%] left-[10%] w-[500px] h-[500px] rounded-full opacity-25 "
           style={{
             background:
               "radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)",
@@ -80,7 +80,7 @@ export default function HistoryPage() {
           }}
         />
         <div
-          className="absolute bottom-[-10%] right-[10%] w-[400px] h-[400px] rounded-full opacity-20 mix-blend-screen"
+          className="absolute bottom-[-10%] right-[10%] w-[400px] h-[400px] rounded-full opacity-20 "
           style={{
             background:
               "radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)",

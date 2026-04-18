@@ -74,7 +74,7 @@ export default function VerifyEmail() {
   }, [status, countdown]);
 
   return (
-    <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden ">
       {/* Ambient background glows */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <motion.div

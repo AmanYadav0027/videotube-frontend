@@ -58,7 +58,7 @@ export default function Logout() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden selection:bg-rose-500/30 selection:text-rose-200">
+    <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden theme-rose">
       {/* Ambient background */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <motion.div
@@ -142,7 +142,10 @@ export default function Logout() {
             </AnimatePresence>
 
             {/* Buttons */}
-            <motion.div variants={itemVariants} className="flex flex-col gap-3">
+            <motion.div
+              variants={itemVariants}
+              className=" flex flex-col gap-3"
+            >
               <motion.button
                 whileHover={{
                   scale: 1.02,

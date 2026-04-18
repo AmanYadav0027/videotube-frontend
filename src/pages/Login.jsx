@@ -45,6 +45,7 @@ function inputCls(err) {
     "block w-full pl-10 pr-10 py-3.5 rounded-2xl text-sm font-medium",
     "bg-black/25 border text-slate-100 placeholder-slate-500",
     "focus:outline-none transition-all duration-300 shadow-inner",
+    "[&:-webkit-autofill]:shadow-[0_0_0_1000px_#0A0A0A_inset] [&:-webkit-autofill]:-webkit-text-fill-color-white",
     err
       ? "border-rose-500/50 focus:border-rose-500 focus:bg-rose-500/8 focus:shadow-[0_0_18px_rgba(244,63,94,0.12)]"
       : "border-white/10 focus:border-indigo-500 focus:bg-indigo-500/8 hover:border-white/18 focus:shadow-[0_0_18px_rgba(99,102,241,0.12)]",
@@ -90,7 +91,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div className="min-h-screen bg-[#050505] flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden ">
       {/* Ambient background glows */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <motion.div
@@ -181,16 +182,16 @@ export default function Login() {
                 >
                   Email or Username <span className="text-rose-500">*</span>
                 </label>
-                <div className="relative">
-                  <motion.span
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none group-focus-within:text-indigo-400 transition-colors duration-300"
-                    animate={
-                      errors.emailOrUsername ? { x: [0, -4, 4, -4, 4, 0] } : {}
-                    }
-                    transition={{ duration: 0.35 }}
-                  >
-                    <AtSign size={15} />
-                  </motion.span>
+
+                {/*  ANIMATED BORDER WRAPPER  */}
+                <div className="relative rounded-2xl p-[1.5px] overflow-hidden">
+                  {/* Rotating Gradient Background */}
+                  <div className="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,transparent_70%,#6366f1_100%)] opacity-50 group-focus-within:opacity-100 transition-opacity duration-500" />
+
+                  {/* Static Border Fallback */}
+                  <div className="absolute inset-0 rounded-2xl border border-white/10 group-focus-within:border-transparent transition-colors pointer-events-none" />
+
+                  {/* Input Field */}
                   <input
                     id="emailOrUsername"
                     type="text"
@@ -198,9 +199,21 @@ export default function Login() {
                     {...register("emailOrUsername", {
                       required: "Email or username is required",
                     })}
-                    className={inputCls(errors.emailOrUsername)}
+                    className="relative w-full h-full pl-10 pr-4 py-3.5 rounded-[15px] bg-[#0A0A0A] text-slate-100 placeholder-slate-500 focus:outline-none shadow-inner [&:-webkit-autofill]:shadow-[0_0_0_1000px_#0A0A0A_inset] [&:-webkit-autofill]:-webkit-text-fill-color-white"
                   />
+
+                  {/* Icon (z-10 ensures it sits on top of the input) */}
+                  <motion.span
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none group-focus-within:text-indigo-400 transition-colors duration-300 z-10"
+                    animate={
+                      errors.emailOrUsername ? { x: [0, -4, 4, -4, 4, 0] } : {}
+                    }
+                    transition={{ duration: 0.35 }}
+                  >
+                    <AtSign size={15} />
+                  </motion.span>
                 </div>
+
                 <AnimatePresence>
                   {errors.emailOrUsername && (
                     <motion.p
@@ -231,14 +244,15 @@ export default function Login() {
                     Forgot password?
                   </Link>
                 </div>
-                <div className="relative">
-                  <motion.span
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none group-focus-within:text-indigo-400 transition-colors duration-300"
-                    animate={errors.password ? { x: [0, -4, 4, -4, 4, 0] } : {}}
-                    transition={{ duration: 0.35 }}
-                  >
-                    <Lock size={15} />
-                  </motion.span>
+
+                {/*  ANIMATED BORDER WRAPPER  */}
+                <div className="relative rounded-2xl p-[1.5px] overflow-hidden">
+                  {/* Rotating Gradient Background */}
+                  <div className="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,transparent_60%,#D97706_80%,#FDE047_100%)] opacity-50 group-focus-within:opacity-100 transition-opacity duration-500" />
+
+                  {/* Static Border Fallback */}
+                  <div className="absolute inset-0 rounded-2xl border border-white/10 group-focus-within:border-transparent transition-colors pointer-events-none" />
+
                   <input
                     id="password"
                     type={showPassword ? "text" : "password"}
@@ -246,18 +260,30 @@ export default function Login() {
                     {...register("password", {
                       required: "Password is required",
                     })}
-                    className={inputCls(errors.password)}
+                    autoComplete="new-password"
+                    className="relative w-full h-full pl-10 pr-10 py-3.5 rounded-[15px] bg-[#0A0A0A] text-slate-100 placeholder-slate-500 focus:outline-none shadow-inner [&:-webkit-autofill]:shadow-[0_0_0_1000px_#0A0A0A_inset] [&:-webkit-autofill]:-webkit-text-fill-color-white"
                   />
-                  {/* Show/hide toggle */}
+
+                  {/* Icon */}
+                  <motion.span
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none group-focus-within:text-amber-400 transition-colors duration-300 z-10"
+                    animate={errors.password ? { x: [0, -4, 4, -4, 4, 0] } : {}}
+                    transition={{ duration: 0.35 }}
+                  >
+                    <Lock size={15} />
+                  </motion.span>
+
+                  {/* Show/hide toggle (z-10 ensures it's clickable) */}
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors p-0.5"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors p-0.5 z-10"
                     tabIndex={-1}
                   >
                     {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                   </button>
                 </div>
+
                 <AnimatePresence>
                   {errors.password && (
                     <motion.p
@@ -273,7 +299,7 @@ export default function Login() {
               </motion.div>
 
               {/* Submit */}
-              <motion.div variants={itemVariants} className="pt-1">
+              <motion.div variants={itemVariants} className=" pt-1">
                 <motion.button
                   whileHover={{
                     scale: 1.02,

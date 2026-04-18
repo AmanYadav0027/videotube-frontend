@@ -49,23 +49,17 @@ export default function VideoCard({ video }) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
         {/* Duration badge */}
-        <motion.span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-lg bg-black/70 backdrop-blur-md text-white text-[11px] font-semibold tabular-nums tracking-wide border border-white/[0.08] select-none group-hover:opacity-0 transition-opacity duration-200">
+        <span className="absolute bottom-2 right-2 px-2 py-0.5 rounded-lg bg-black/70 backdrop-blur-md text-white text-[11px] font-semibold tabular-nums tracking-wide border border-white/[0.08] select-none group-hover:opacity-0 transition-opacity duration-200">
           {formatDuration(duration)}
-        </motion.span>
+        </span>
 
         {/* Play button */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none">
-          <motion.div
-            initial={{ scale: 0.7 }}
-            whileHover={{ scale: 1.1 }}
-            animate={{ scale: 1 }}
-            transition={spring}
-            className="w-12 h-12 rounded-full bg-indigo-500/90 backdrop-blur-md shadow-2xl shadow-indigo-500/60 flex items-center justify-center pl-1 border border-indigo-400/40"
-          >
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity  duration-300 pointer-events-none">
+          <div className="w-12 h-12 rounded-full bg-indigo-500/90 backdrop-blur-md shadow-2xl shadow-indigo-500/60 flex items-center justify-center pl-1 border border-indigo-400/40 transition-transform duration-200 group-hover:scale-110">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
               <polygon points="5,3 19,12 5,21" />
             </svg>
-          </motion.div>
+          </div>
         </div>
       </Link>
 
@@ -78,11 +72,7 @@ export default function VideoCard({ video }) {
           aria-label={`Visit ${owner?.username}'s channel`}
           className="shrink-0 mt-0.5 group/avatar"
         >
-          <motion.div
-            whileHover={{ scale: 1.1 }}
-            transition={spring}
-            className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-transparent group-hover/avatar:ring-indigo-500/50 bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 transition-shadow duration-300"
-          >
+          <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-transparent group-hover/avatar:ring-indigo-500/50 bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 transition-transform duration-200 hover:scale-110">
             {owner?.avatar ? (
               <img
                 src={owner.avatar}
@@ -94,7 +84,7 @@ export default function VideoCard({ video }) {
                 {ownerInitial}
               </span>
             )}
-          </motion.div>
+          </div>
         </Link>
 
         {/* Text */}

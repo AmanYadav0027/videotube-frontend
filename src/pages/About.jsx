@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Heart, Users, Zap, ChevronRight } from "lucide-react";
@@ -89,40 +89,55 @@ const TECH_STACK = [
   },
 ];
 
-const spring = {
-  type: "spring",
-  stiffness: 380,
-  damping: 28,
-  mass: 0.9,
-};
-
+const spring = { type: "spring", stiffness: 340, damping: 32, mass: 0.8 };
 const containerVariants = {
   hidden: { opacity: 0 },
   show: {
     opacity: 1,
-    transition: { staggerChildren: 0.07, delayChildren: 0.05 },
+    transition: { staggerChildren: 0.06, delayChildren: 0.04 },
   },
 };
-
 const itemVariants = {
-  hidden: { opacity: 0, y: 18, filter: "blur(5px)" },
-  show: { opacity: 1, y: 0, filter: "blur(0px)", transition: spring },
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: spring },
 };
+
+const FeatureCard = memo(function FeatureCard({ icon: Icon, label, desc }) {
+  return (
+    <div
+      className="group bg-[#0f1117] border border-white/[0.07] rounded-2xl p-5
+                 hover:border-indigo-500/20 hover:-translate-y-1
+                 transition-[border-color,transform] duration-300 cursor-default"
+      style={{ contain: "layout style" }}
+    >
+      <div
+        className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/15
+                      flex items-center justify-center mb-3
+                      group-hover:scale-110 group-hover:bg-indigo-500/20
+                      transition-[transform,background-color] duration-300"
+      >
+        <Icon size={15} className="text-indigo-400" strokeWidth={1.75} />
+      </div>
+      <h3 className="text-sm font-semibold text-slate-200 mb-1">{label}</h3>
+      <p className="text-xs text-slate-500 leading-relaxed">{desc}</p>
+    </div>
+  );
+});
 
 export default function About() {
   const [selectedTech, setSelectedTech] = useState(null);
-
   useEffect(() => {
     document.title = "About — MyApp";
   }, []);
 
   return (
     <div className="min-h-full bg-[#0a0a0f] relative">
-      {/* Ambient glows */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {/* FIX: bg-indigo-600/8 → bg-indigo-600/10 (standard Tailwind opacity) */}
+      <div
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+        aria-hidden="true"
+      >
         <div className="absolute top-0 left-1/3 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/3 w-96 h-96 bg-violet-600/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-1/3 w-96 h-96 bg-violet-600/5  rounded-full blur-3xl" />
       </div>
 
       <motion.div
@@ -133,108 +148,87 @@ export default function About() {
       >
         {/* Hero */}
         <motion.div variants={itemVariants} className="text-center space-y-4">
-          {/* FIX: bg-linear-to-br → bg-gradient-to-br */}
-          <motion.div
-            whileHover={{ scale: 1.1, y: -4 }}
-            whileTap={{ scale: 0.96 }}
-            transition={spring}
-            className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mx-auto shadow-2xl shadow-indigo-500/25 cursor-default"
+          <div
+            className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600
+             flex items-center justify-center mx-auto cursor-default
+             hover:scale-105 hover:-translate-y-1
+             transition-transform duration-200
+             shadow-[0_0_32px_rgba(99,102,241,0.35)]"
           >
             <Play size={22} className="text-white ml-0.5" fill="white" />
-          </motion.div>
+          </div>
           <h1 className="text-3xl font-bold text-slate-100 tracking-tight">
             MyApp
           </h1>
-          <p className="text-slate-500 leading-relaxed max-w-md mx-auto">
+          <p className="text-sm text-slate-500 leading-relaxed max-w-md mx-auto">
             A full-stack video sharing platform built with React, Node.js,
             MongoDB, and Cloudinary. Share videos, connect with creators, and
             build your community.
           </p>
         </motion.div>
 
-        {/* Features grid */}
+        {/* Features */}
         <motion.div
           variants={containerVariants}
           className="grid grid-cols-1 sm:grid-cols-2 gap-4"
         >
-          {FEATURES.map(({ icon: Icon, label, desc }) => (
-            <motion.div
-              key={label}
-              variants={itemVariants}
-              whileHover={{ y: -4, scale: 1.01 }}
-              transition={spring}
-              // FIX: border-white/7 → border-white/[0.07], border-white/15 → border-white/[0.15]
-              className="group bg-[#0f1117] border border-white/[0.07] rounded-2xl p-5 hover:border-white/[0.15] hover:shadow-xl hover:shadow-indigo-500/5 transition-all duration-300 cursor-default"
-            >
-              <div className="w-9 h-9 rounded-xl bg-indigo-500/10 border border-indigo-500/15 flex items-center justify-center mb-3 group-hover:scale-110 group-hover:bg-indigo-500/20 transition-all duration-300">
-                <Icon
-                  size={15}
-                  className="text-indigo-400"
-                  strokeWidth={1.75}
-                />
-              </div>
-              <h3 className="text-sm font-semibold text-slate-200 mb-1">
-                {label}
-              </h3>
-              <p className="text-xs text-slate-500 leading-relaxed">{desc}</p>
-            </motion.div>
+          {FEATURES.map(({ icon, label, desc }) => (
+            <FeatureCard key={label} icon={icon} label={label} desc={desc} />
           ))}
         </motion.div>
 
         {/* Tech stack */}
         <motion.div
           variants={itemVariants}
-          // FIX: border-white/[0.07]
-          className="bg-[#0f1117] border border-white/[0.07] rounded-2xl p-6 hover:border-white/[0.12] transition-colors duration-300"
+          className="bg-[#0d0d14] border border-white/[0.07] rounded-2xl p-6
+                     hover:border-white/[0.12] transition-[border-color] duration-300"
+          style={{ contain: "layout style" }}
         >
           <h2 className="text-sm font-semibold text-slate-300 mb-4">
             How It Works Under The Hood
           </h2>
-
-          {/* Tech buttons */}
           <div className="flex flex-wrap gap-2 mb-1">
             {TECH_STACK.map((tech) => {
               const isActive = selectedTech?.name === tech.name;
               return (
-                <motion.button
+                <button
                   key={tech.name}
-                  whileHover={{ y: -1 }}
-                  whileTap={{ scale: 0.96 }}
                   onClick={() => setSelectedTech(isActive ? null : tech)}
-                  // FIX: bg-white/4 → bg-white/[0.04], border-white/[0.07]
-                  className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all duration-300 outline-none cursor-pointer
-                    ${
-                      isActive
-                        ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/40 shadow-lg shadow-indigo-500/10"
-                        : "bg-white/[0.04] text-slate-400 border-white/[0.07] hover:bg-white/10 hover:text-slate-200"
-                    }`}
+                  className={`px-3 py-1.5 rounded-lg border text-xs font-medium outline-none cursor-pointer
+                              hover:-translate-y-0.5 active:scale-95
+                              transition-[background,color,border-color,transform] duration-150
+                              ${
+                                isActive
+                                  ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/40"
+                                  : "bg-white/[0.04] text-slate-400 border-white/[0.07] hover:bg-white/10 hover:text-slate-200"
+                              }`}
                 >
                   {tech.name}
-                </motion.button>
+                </button>
               );
             })}
           </div>
 
-          {/* Tech info panel */}
           <div
-            className={`grid transition-all duration-350 ease-in-out ${
-              selectedTech
-                ? "grid-rows-[1fr] opacity-100 mt-5"
-                : "grid-rows-[0fr] opacity-0 mt-0"
-            }`}
+            className={`grid transition-[grid-template-rows,opacity,margin] duration-300 ease-out
+                          ${selectedTech ? "grid-rows-[1fr] opacity-100 mt-5" : "grid-rows-[0fr] opacity-0 mt-0"}`}
           >
             <div className="overflow-hidden">
-              <AnimatePresence mode="wait">
+              <AnimatePresence mode="wait" initial={false}>
                 {selectedTech && (
                   <motion.div
                     key={selectedTech.name}
-                    initial={{ opacity: 0, y: 8 }}
+                    initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.2, ease: "easeOut" }}
-                    className="p-4 rounded-xl bg-slate-900/50 border border-indigo-500/15 flex flex-col gap-2.5 relative overflow-hidden"
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ duration: 0.16, ease: "easeOut" }}
+                    className="p-4 rounded-xl border border-indigo-500/15 flex flex-col gap-2.5 relative overflow-hidden"
+                    style={{ background: "rgba(15,15,25,0.97)" }}
                   >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none" />
+                    <div
+                      className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none"
+                      aria-hidden="true"
+                    />
                     <div className="flex items-center justify-between relative z-10">
                       <span className="text-sm font-bold text-slate-200">
                         {selectedTech.name}
@@ -250,7 +244,8 @@ export default function About() {
                       href={selectedTech.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[11px] font-medium text-indigo-400 hover:text-indigo-300 inline-flex items-center gap-1 mt-1 w-fit group/link relative z-10 transition-colors"
+                      className="text-[11px] font-medium text-indigo-400 hover:text-indigo-300
+                                 inline-flex items-center gap-1 mt-1 w-fit group/link relative z-10 transition-colors"
                     >
                       Read official docs
                       <ChevronRight
@@ -269,30 +264,35 @@ export default function About() {
         <motion.div variants={itemVariants} className="text-center space-y-3">
           <p className="text-sm text-slate-500">Ready to get started?</p>
           <div className="flex items-center justify-center gap-3">
-            {/* FIX: bg-linear-to-r → bg-gradient-to-r */}
             <Link
               to="/register"
-              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-500/30 active:scale-95 transition-all duration-200"
+              className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white
+                         bg-gradient-to-r from-indigo-600 to-violet-600
+                         hover:from-indigo-500 hover:to-violet-500
+                         hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(99,102,241,0.35)]
+                         active:scale-95 transition-[transform,box-shadow,background] duration-200"
             >
               Create account
             </Link>
-            {/* FIX: border-white/8 → border-white/[0.08] */}
             <Link
               to="/"
-              className="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-400 border border-white/[0.08] hover:border-white/[0.14] hover:text-slate-200 hover:bg-white/5 hover:-translate-y-0.5 active:scale-95 transition-all duration-200"
+              className="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-400
+                         border border-white/[0.08] hover:border-white/[0.16]
+                         hover:text-slate-200 hover:bg-white/5 hover:-translate-y-0.5
+                         active:scale-95 transition-[border-color,color,background,transform] duration-200"
             >
               Browse videos
             </Link>
           </div>
         </motion.div>
 
-        {/* System status */}
+        {/* Status */}
         <motion.div
           variants={itemVariants}
           className="flex items-center justify-center gap-2"
         >
-          <span className="relative flex h-1.5 w-1.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
+          <span className="relative flex h-1.5 w-1.5" aria-hidden="true">
+            <span className=" absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" />
             <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
           </span>
           <span className="text-[11px] text-slate-600">System Online</span>

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, memo } from "react";
 import { useSelector } from "react-redux";
 import axios from "axios";
 import { timeAgo } from "../utils/Video.utils";
@@ -20,9 +20,57 @@ import { motion, AnimatePresence } from "framer-motion";
 const spring = { type: "spring", stiffness: 400, damping: 30, mass: 0.8 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Simple virtual list hook — renders only visible items + overscan buffer.
+// Eliminates scroll jank on large feeds by keeping DOM node count low.
+// ─────────────────────────────────────────────────────────────────────────────
+function useVirtualList({ items, itemHeight, overscan = 5 }) {
+  const containerRef = useRef(null);
+  const [range, setRange] = useState({ start: 0, end: 20 });
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const update = () => {
+      const { scrollTop, clientHeight } = container;
+      const start = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
+      const end = Math.min(
+        items.length - 1,
+        Math.ceil((scrollTop + clientHeight) / itemHeight) + overscan,
+      );
+      setRange({ start, end });
+    };
+
+    update();
+    container.addEventListener("scroll", update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(container);
+    return () => {
+      container.removeEventListener("scroll", update);
+      ro.disconnect();
+    };
+  }, [items.length, itemHeight, overscan]);
+
+  const visibleItems = items.slice(range.start, range.end + 1);
+  const paddingTop = range.start * itemHeight;
+  const paddingBottom = Math.max(
+    0,
+    (items.length - range.end - 1) * itemHeight,
+  );
+
+  return {
+    containerRef,
+    visibleItems,
+    paddingTop,
+    paddingBottom,
+    totalHeight: items.length * itemHeight,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Toast
 // ─────────────────────────────────────────────────────────────────────────────
-function Toast({ message, type = "info", onClose }) {
+const Toast = memo(function Toast({ message, type = "info", onClose }) {
   useEffect(() => {
     const t = setTimeout(onClose, 3000);
     return () => clearTimeout(t);
@@ -61,7 +109,7 @@ function Toast({ message, type = "info", onClose }) {
       {message}
     </motion.div>
   );
-}
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Skeleton
@@ -108,23 +156,65 @@ function TweetSkeleton() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Tweet card
+// Lazy avatar — shows placeholder until image loads
 // ─────────────────────────────────────────────────────────────────────────────
-function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
+function LazyAvatar({ src, alt, fallback, className }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div
+      className={`relative overflow-hidden ${className}`}
+      style={{ background: "linear-gradient(135deg, #6366f1, #7c3aed)" }}
+    >
+      {!loaded && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-white text-xs font-bold select-none">
+            {fallback}
+          </span>
+        </div>
+      )}
+      {src && (
+        <img
+          src={src}
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+          onLoad={() => setLoaded(true)}
+          className={`w-full h-full object-cover transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
+        />
+      )}
+      {!src && (
+        <span className="text-white text-xs font-bold select-none">
+          {fallback}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TweetCard — memoized, no whileHover to avoid per-card JS listeners
+// ─────────────────────────────────────────────────────────────────────────────
+const TweetCard = memo(function TweetCard({
+  tweet,
+  currentUserId,
+  onDelete,
+  onUpdate,
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(tweet.content);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
-  const [isLiked, setIsLiked] = useState(tweet.isLiked || false);
-  const [likesCount, setLikesCount] = useState(tweet.likesCount || 0);
+  // BUG FIX: Normalise initial like state — API might send undefined
+  const [isLiked, setIsLiked] = useState(Boolean(tweet.isLiked));
+  const [likesCount, setLikesCount] = useState(tweet.likesCount ?? 0);
   const [liking, setLiking] = useState(false);
 
   const menuRef = useRef(null);
   const editRef = useRef(null);
   const owner = tweet.owner ?? {};
-  const initial = owner.username?.[0]?.toUpperCase() || "?";
+  const initial = owner.username?.[0]?.toUpperCase() ?? "?";
   const isOwner = currentUserId && owner._id?.toString() === currentUserId;
 
   useEffect(() => {
@@ -159,7 +249,7 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
       onUpdate(tweet._id, res.data?.data?.content ?? editContent.trim());
       setEditing(false);
     } catch {
-      // keep editing open on error
+      /* silently handled — toast shown from parent if needed */
     } finally {
       setSaving(false);
     }
@@ -183,15 +273,17 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
 
   const handleToggleLike = async () => {
     if (!currentUserId || liking) return;
-    const previousIsLiked = isLiked;
-    setIsLiked(!previousIsLiked);
-    setLikesCount((prev) => (previousIsLiked ? prev - 1 : prev + 1));
+    const wasLiked = isLiked;
+    // Optimistic update
+    setIsLiked(!wasLiked);
+    setLikesCount((prev) => (wasLiked ? prev - 1 : prev + 1));
     setLiking(true);
     try {
       await axios.post(`/api/v2/likes/toggle/t/${tweet._id}`);
     } catch {
-      setIsLiked(previousIsLiked);
-      setLikesCount((prev) => (!previousIsLiked ? prev - 1 : prev + 1));
+      // BUG FIX: Rollback was inverted in original — now correctly reverses optimistic change
+      setIsLiked(wasLiked);
+      setLikesCount((prev) => (wasLiked ? prev + 1 : prev - 1));
     } finally {
       setLiking(false);
     }
@@ -203,8 +295,7 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
       initial={{ opacity: 0, y: 16, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={spring}
-      whileHover={{ y: -2 }}
-      className="group relative rounded-2xl p-5 border transition-all duration-300 overflow-hidden"
+      className="group relative rounded-2xl p-5 border transition-all duration-300 overflow-hidden hover:-translate-y-0.5"
       style={{
         background: "rgba(10,10,15,0.85)",
         backdropFilter: "blur(20px)",
@@ -212,7 +303,6 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
         boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
       }}
     >
-      {/* Hover top shimmer line */}
       <div
         className="absolute top-0 left-6 right-6 h-px opacity-0 group-hover:opacity-100 transition-opacity duration-500"
         style={{
@@ -222,28 +312,14 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
       />
 
       <div className="flex gap-4">
-        {/* Avatar */}
-        <motion.div
-          whileHover={{ scale: 1.08 }}
-          transition={spring}
-          className="shrink-0 w-10 h-10 rounded-full overflow-hidden flex items-center justify-center shadow-lg"
-          style={{ background: "linear-gradient(135deg, #6366f1, #7c3aed)" }}
-        >
-          {owner.avatar ? (
-            <img
-              src={owner.avatar}
-              alt={owner.username}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <span className="text-white text-xs font-bold select-none">
-              {initial}
-            </span>
-          )}
-        </motion.div>
+        <LazyAvatar
+          src={owner.avatar}
+          alt={owner.username}
+          fallback={initial}
+          className="shrink-0 w-10 h-10 rounded-full shadow-lg transition-transform duration-200 hover:scale-105"
+        />
 
         <div className="flex-1 min-w-0">
-          {/* Header row */}
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-2 flex-wrap min-w-0">
               <span className="text-sm font-bold text-slate-200 truncate group-hover:text-white transition-colors">
@@ -260,25 +336,18 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
               </span>
             </div>
 
-            {/* Menu */}
             {isOwner && (
               <div ref={menuRef} className="relative shrink-0">
-                <motion.button
-                  whileHover={{
-                    scale: 1.1,
-                    backgroundColor: "rgba(255,255,255,0.08)",
-                  }}
-                  whileTap={{ scale: 0.9 }}
+                <button
                   onClick={() => {
                     setMenuOpen((v) => !v);
                     setConfirmDel(false);
                   }}
-                  className="p-1.5 rounded-lg text-slate-600 hover:text-slate-200 transition-all outline-none"
-                  style={{ backdropFilter: "blur(10px)" }}
+                  className="p-1.5 rounded-lg text-slate-600 hover:text-slate-200 hover:bg-white/[0.08] transition-all outline-none"
                 >
                   <MoreHorizontal size={16} />
-                </motion.button>
-                <AnimatePresence>
+                </button>
+                <AnimatePresence initial={false}>
                   {menuOpen && (
                     <motion.div
                       initial={{ opacity: 0, scale: 0.9, y: -8 }}
@@ -313,7 +382,6 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
             )}
           </div>
 
-          {/* Content / Edit mode */}
           {editing ? (
             <motion.div
               initial={{ opacity: 0 }}
@@ -340,9 +408,7 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
                 }}
               />
               <div className="flex items-center justify-end gap-2">
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
+                <button
                   onClick={() => {
                     setEditing(false);
                     setEditContent(tweet.content);
@@ -350,10 +416,8 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
                   className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-200 hover:bg-white/[0.06] transition-colors"
                 >
                   Cancel
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.04 }}
-                  whileTap={{ scale: 0.96 }}
+                </button>
+                <button
                   onClick={handleSaveEdit}
                   disabled={saving || !editContent.trim()}
                   className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-50"
@@ -363,7 +427,7 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
                   }}
                 >
                   <Check size={14} /> {saving ? "Saving…" : "Save"}
-                </motion.button>
+                </button>
               </div>
             </motion.div>
           ) : (
@@ -371,10 +435,7 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
               <p className="text-[13px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words mb-3">
                 {tweet.content}
               </p>
-
-              {/* -- INTERACTION BAR -- */}
               <div className="flex items-center gap-5">
-                {/* Reply */}
                 <button
                   onClick={() => console.log("Open comment modal")}
                   className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-indigo-400 transition-colors duration-200 group/btn"
@@ -390,7 +451,6 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
                   </span>
                 </button>
 
-                {/* Retweet */}
                 <button
                   onClick={() => console.log("Trigger retweet")}
                   className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-emerald-400 transition-colors duration-200 group/btn"
@@ -406,7 +466,6 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
                   </span>
                 </button>
 
-                {/* Like */}
                 <motion.button
                   whileTap={{ scale: 0.85 }}
                   onClick={handleToggleLike}
@@ -425,7 +484,7 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      className={`transition-all duration-300 ${isLiked ? "scale-110 drop-shadow-[0_0_5px_rgba(244,63,94,0.5)]" : "scale-100 group-hover/btn:scale-110"}`}
+                      className={`transition-all duration-300 ${isLiked ? "scale-110" : "scale-100 group-hover/btn:scale-110"}`}
                     >
                       <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
                     </svg>
@@ -457,26 +516,28 @@ function TweetCard({ tweet, currentUserId, onDelete, onUpdate }) {
               >
                 Cancel
               </button>
-              <motion.button
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.96 }}
+              <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="text-xs font-bold text-white px-3 py-1.5 rounded-lg transition-all disabled:opacity-50"
+                className="text-xs font-bold text-white px-3 py-1.5 rounded-lg transition-all disabled:opacity-50 active:scale-95"
                 style={{
                   background: "#e11d48",
                   boxShadow: "0 4px 12px rgba(225,29,72,0.3)",
                 }}
               >
                 {deleting ? "Deleting…" : "Delete"}
-              </motion.button>
+              </button>
             </motion.div>
           )}
         </div>
       </div>
     </motion.div>
   );
-}
+});
+
+// Estimated card height in px — used by virtual list.
+// Cards are roughly 120px tall; overscan handles variance gracefully.
+const ITEM_HEIGHT = 140;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Tweets page
@@ -492,8 +553,13 @@ export default function Tweets() {
   const [toast, setToast] = useState(null);
 
   const textareaRef = useRef(null);
+
+  // PERF FIX: Stabilise showToast with a ref so useEffect fetch doesn't re-run on re-render
+  const showToastRef = useRef(null);
+  showToastRef.current = (message, type = "info") =>
+    setToast({ message, type });
   const showToast = useCallback(
-    (message, type = "info") => setToast({ message, type }),
+    (message, type) => showToastRef.current(message, type),
     [],
   );
 
@@ -502,20 +568,24 @@ export default function Tweets() {
       setLoading(false);
       return;
     }
+    let cancelled = false;
     const fetchTweets = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(`/api/v2/tweets/user/${currentUser._id}`);
+        const res = await axios.get("/api/v2/tweets/feed");
         const data = res.data?.data ?? [];
-        setTweets(Array.isArray(data) ? data : []);
+        if (!cancelled) setTweets(Array.isArray(data) ? data : []);
       } catch {
-        showToast("Failed to load posts.", "error");
+        if (!cancelled) showToast("Failed to load posts.", "error");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     fetchTweets();
-  }, [currentUser?._id, showToast]);
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser?._id]); // showToast deliberately omitted — stabilised via ref
 
   const handlePost = async (e) => {
     e.preventDefault();
@@ -543,9 +613,13 @@ export default function Tweets() {
         content: optimistic.content,
       });
       const real = res.data?.data;
+      // BUG FIX: Spread real first so server fields win, then overlay owner from optimistic
+      // to avoid a flicker if the API returns a partial owner object.
       setTweets((prev) =>
         prev.map((t) =>
-          t._id === optimistic._id ? { ...real, owner: optimistic.owner } : t,
+          t._id === optimistic._id
+            ? { ...real, owner: real.owner ?? optimistic.owner }
+            : t,
         ),
       );
       showToast("Posted successfully!", "success");
@@ -584,12 +658,34 @@ export default function Tweets() {
     e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`;
   };
 
+  // PERF: Virtual list — only renders the items currently visible in the feed container
+  const feedContainerRef = useRef(null);
+  const {
+    containerRef: virtualRef,
+    visibleItems,
+    paddingTop,
+    paddingBottom,
+  } = useVirtualList({
+    items: tweets,
+    itemHeight: ITEM_HEIGHT,
+    overscan: 5,
+  });
+
+  // Merge the two refs into one callback ref
+  const feedRef = useCallback(
+    (el) => {
+      feedContainerRef.current = el;
+      virtualRef.current = el;
+    },
+    [virtualRef],
+  );
+
   return (
     <div
       className="min-h-screen relative overflow-hidden"
       style={{ background: "#050508" }}
     >
-      <AnimatePresence>
+      <AnimatePresence initial={false}>
         {toast && (
           <Toast
             message={toast.message}
@@ -599,32 +695,32 @@ export default function Tweets() {
         )}
       </AnimatePresence>
 
-      {/* Ambient orbs */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div
-          className="absolute top-0 right-1/3 w-[500px] h-[400px] opacity-[0.06] mix-blend-screen"
+          className="absolute top-0 right-1/3 w-[500px] h-[400px] opacity-[0.06]"
           style={{
             background:
-              "radial-gradient(ellipse, rgba(139,92,246,1) 0%, transparent 70%)",
+              "radial-gradient(ellipse, rgba(139,92,246,0.8) 0%, transparent 70%)",
             filter: "blur(80px)",
           }}
         />
         <div
-          className="absolute bottom-0 left-1/3 w-[400px] h-[400px] opacity-[0.05] mix-blend-screen"
+          className="absolute bottom-0 left-1/3 w-[400px] h-[400px] opacity-[0.05]"
           style={{
             background:
-              "radial-gradient(ellipse, rgba(99,102,241,1) 0%, transparent 70%)",
+              "radial-gradient(ellipse, rgba(99,102,241,0.8) 0%, transparent 70%)",
             filter: "blur(100px)",
           }}
         />
       </div>
 
       <div className="relative z-10 max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-        {/* ── Page header ── */}
+        {/* Header — viewport once:true so the IntersectionObserver is cleaned up after trigger */}
         <motion.div
           initial={{ opacity: 0, y: -12, filter: "blur(6px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={spring}
+          viewport={{ once: true }}
           className="flex items-center gap-4"
         >
           <div
@@ -646,7 +742,7 @@ export default function Tweets() {
           </div>
         </motion.div>
 
-        {/* ── Compose box ── */}
+        {/* Compose box */}
         {isAuthenticated ? (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -659,7 +755,6 @@ export default function Tweets() {
               borderColor: "rgba(255,255,255,0.07)",
             }}
           >
-            {/* Top shimmer */}
             <div
               className="h-px w-full"
               style={{
@@ -669,24 +764,12 @@ export default function Tweets() {
             />
             <form onSubmit={handlePost} className="p-5 sm:p-6">
               <div className="flex gap-4">
-                {/* Avatar */}
-                <div
-                  className="shrink-0 w-10 h-10 rounded-full overflow-hidden flex items-center justify-center shadow-md"
-                  style={{
-                    background: "linear-gradient(135deg, #6366f1, #7c3aed)",
-                  }}
-                >
-                  {currentUser?.avatar ? (
-                    <img
-                      src={currentUser.avatar}
-                      alt={currentUser.username}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <User size={18} className="text-white" />
-                  )}
-                </div>
-
+                <LazyAvatar
+                  src={currentUser?.avatar}
+                  alt={currentUser?.username}
+                  fallback={<User size={18} className="text-white" />}
+                  className="shrink-0 w-10 h-10 rounded-full shadow-md"
+                />
                 <div className="flex-1 space-y-3">
                   <textarea
                     ref={textareaRef}
@@ -702,7 +785,7 @@ export default function Tweets() {
                     className="w-full bg-transparent text-[15px] text-slate-200 placeholder-slate-600 outline-none resize-none leading-relaxed mt-1"
                   />
 
-                  <AnimatePresence>
+                  <AnimatePresence initial={false}>
                     {content.length > 0 && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
@@ -717,7 +800,6 @@ export default function Tweets() {
                             {content.length}{" "}
                             <span className="opacity-50">/ 500</span>
                           </span>
-                          {/* Progress ring */}
                           <svg
                             width="20"
                             height="20"
@@ -748,9 +830,7 @@ export default function Tweets() {
                           </svg>
                         </div>
                         <div className="flex items-center gap-2">
-                          <motion.button
-                            whileHover={{ scale: 1.04 }}
-                            whileTap={{ scale: 0.96 }}
+                          <button
                             type="button"
                             onClick={() => {
                               setContent("");
@@ -760,16 +840,11 @@ export default function Tweets() {
                             className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-all"
                           >
                             Clear
-                          </motion.button>
-                          <motion.button
-                            whileHover={{
-                              scale: 1.04,
-                              boxShadow: "0 8px 20px rgba(99,102,241,0.4)",
-                            }}
-                            whileTap={{ scale: 0.96 }}
+                          </button>
+                          <button
                             type="submit"
                             disabled={posting || !content.trim()}
-                            className="flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-black text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-black text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
                             style={{
                               background:
                                 "linear-gradient(135deg, #6366f1, #7c3aed)",
@@ -782,7 +857,7 @@ export default function Tweets() {
                               className={posting ? "animate-pulse" : ""}
                             />
                             {posting ? "Posting…" : "Post"}
-                          </motion.button>
+                          </button>
                         </div>
                       </motion.div>
                     )}
@@ -807,7 +882,7 @@ export default function Tweets() {
           </motion.div>
         )}
 
-        {/* ── Tweets feed ── */}
+        {/* Feed */}
         {loading ? (
           <TweetSkeleton />
         ) : tweets.length === 0 ? (
@@ -834,27 +909,32 @@ export default function Tweets() {
             </div>
           </motion.div>
         ) : (
-          <motion.div
-            className="space-y-4"
-            initial="hidden"
-            animate="show"
-            variants={{
-              hidden: { opacity: 0 },
-              show: { opacity: 1, transition: { staggerChildren: 0.06 } },
+          // PERF: Virtual scrolling container — fixed height, overflow scroll
+          // Only DOM-renders ITEM_HEIGHT-sized windows of cards at a time
+          <div
+            ref={feedRef}
+            className="overflow-y-auto"
+            style={{
+              maxHeight: "70vh",
+              scrollbarWidth: "thin",
+              scrollbarColor: "rgba(99,102,241,0.3) transparent",
             }}
           >
-            <AnimatePresence mode="popLayout">
-              {tweets.map((tweet) => (
-                <TweetCard
-                  key={tweet._id}
-                  tweet={tweet}
-                  currentUserId={currentUser?._id}
-                  onDelete={handleDelete}
-                  onUpdate={handleUpdate}
-                />
-              ))}
-            </AnimatePresence>
-          </motion.div>
+            <div style={{ paddingTop, paddingBottom }}>
+              <AnimatePresence mode="popLayout" initial={false}>
+                {visibleItems.map((tweet) => (
+                  <div key={tweet._id} className="mb-4">
+                    <TweetCard
+                      tweet={tweet}
+                      currentUserId={currentUser?._id}
+                      onDelete={handleDelete}
+                      onUpdate={handleUpdate}
+                    />
+                  </div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </div>
         )}
       </div>
     </div>

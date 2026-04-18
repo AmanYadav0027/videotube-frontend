@@ -77,18 +77,16 @@ function StatCard({ label, value, icon: Icon, accent }) {
       style={{
         background: "rgba(10,10,15,0.85)",
         backdropFilter: "blur(20px)",
-        border: `1px solid rgba(255,255,255,0.06)`,
+        border: "1px solid rgba(255,255,255,0.06)",
         boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
       }}
     >
-      {/* Top accent line */}
       <div
         className="absolute top-0 left-0 right-0 h-px opacity-70 group-hover:opacity-100 transition-opacity duration-300"
         style={{
           background: `linear-gradient(90deg, transparent, ${a.line}, transparent)`,
         }}
       />
-      {/* Corner glow */}
       <div
         className="absolute top-0 right-0 w-24 h-24 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
         style={{
@@ -96,7 +94,6 @@ function StatCard({ label, value, icon: Icon, accent }) {
           filter: "blur(20px)",
         }}
       />
-
       <div className="flex items-start justify-between gap-3 relative z-10">
         <div>
           <p className="text-[11px] text-slate-500 font-bold tracking-widest uppercase mb-2">
@@ -111,7 +108,7 @@ function StatCard({ label, value, icon: Icon, accent }) {
           transition={spring}
           className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border"
           style={{
-            background: `rgba(255,255,255,0.04)`,
+            background: "rgba(255,255,255,0.04)",
             borderColor: a.border,
             boxShadow: `0 0 20px ${a.glow}`,
           }}
@@ -173,7 +170,8 @@ function DashboardSkeleton() {
 }
 
 // ─── Flagged Content Tab ───────────────────────────────────────────────────────
-function FlaggedContent() {
+// FIX: accepts setHasFlagged so parent Dashboard knows whether to show red dot
+function FlaggedContent({ setHasFlagged }) {
   const [flagged, setFlagged] = useState(null);
   const [loading, setLoading] = useState(true);
   const [restoringId, setRestoringId] = useState(null);
@@ -183,15 +181,20 @@ function FlaggedContent() {
     const load = async () => {
       try {
         const res = await axios.get("/api/v2/dashboards/flagged");
-        setFlagged(res.data?.data ?? { comments: [], tweets: [] });
+        const data = res.data?.data ?? { comments: [], tweets: [] };
+        setFlagged(data);
+        // FIX: compute total inside load() where data is available, then lift up
+        const total = (data.comments?.length ?? 0) + (data.tweets?.length ?? 0);
+        setHasFlagged(total > 0);
       } catch {
         setFlagged({ comments: [], tweets: [] });
+        setHasFlagged(false);
       } finally {
         setLoading(false);
       }
     };
     load();
-  }, []);
+  }, [setHasFlagged]);
 
   const handleRestore = async (type, id) => {
     if (restoringId) return;
@@ -397,6 +400,8 @@ export default function Dashboard() {
   const [deleting, setDeleting] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
   const [activeTab, setActiveTab] = useState("videos"); // "videos" | "flagged"
+  // FIX: hasFlagged lives here so it controls the tab dot correctly
+  const [hasFlagged, setHasFlagged] = useState(false);
 
   useEffect(() => {
     document.title = "Dashboard — VideoTube";
@@ -462,7 +467,7 @@ export default function Dashboard() {
       {/* Ambient orbs */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <div
-          className="absolute -top-40 -left-20 w-[500px] h-[500px] opacity-[0.06] mix-blend-screen"
+          className="absolute -top-40 -left-20 w-[500px] h-[500px] opacity-[0.06] "
           style={{
             background:
               "radial-gradient(circle, rgba(99,102,241,1) 0%, transparent 70%)",
@@ -470,7 +475,7 @@ export default function Dashboard() {
           }}
         />
         <div
-          className="absolute -bottom-40 -right-20 w-[500px] h-[500px] opacity-[0.05] mix-blend-screen"
+          className="absolute -bottom-40 -right-20 w-[500px] h-[500px] opacity-[0.05] "
           style={{
             background:
               "radial-gradient(circle, rgba(139,92,246,1) 0%, transparent 70%)",
@@ -588,7 +593,6 @@ export default function Dashboard() {
                 boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
               }}
             >
-              {/* Top shimmer line */}
               <div
                 className="h-px w-full"
                 style={{
@@ -621,7 +625,8 @@ export default function Dashboard() {
                     )}
                     <tab.icon size={15} />
                     {tab.label}
-                    {tab.id === "flagged" && (
+                    {/* FIX: only show red dot when there is actually flagged content */}
+                    {tab.id === "flagged" && hasFlagged && (
                       <span
                         className="w-1.5 h-1.5 rounded-full bg-rose-500"
                         style={{ boxShadow: "0 0 8px rgba(244,63,94,0.9)" }}
@@ -815,7 +820,8 @@ export default function Dashboard() {
                       exit={{ opacity: 0, y: -8 }}
                       transition={{ duration: 0.15 }}
                     >
-                      <FlaggedContent />
+                      {/* FIX: pass setHasFlagged so FlaggedContent can update parent state */}
+                      <FlaggedContent setHasFlagged={setHasFlagged} />
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -898,10 +904,7 @@ export default function Dashboard() {
                     Cancel
                   </motion.button>
                   <motion.button
-                    whileHover={{
-                      scale: 1.02,
-                      boxShadow: "0 12px 30px rgba(244,63,94,0.4)",
-                    }}
+                    whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={() => handleDelete(deleteId)}
                     disabled={deleting}

@@ -20,7 +20,7 @@ function AuthLoader() {
         <motion.div
           animate={{ scale: [1, 1.3, 1], opacity: [0.12, 0.28, 0.12] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-600/20 blur-[120px] rounded-full mix-blend-screen"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-600/20 blur-[120px] rounded-full "
         />
         <motion.div
           animate={{ scale: [1, 1.2, 1], opacity: [0.08, 0.18, 0.08] }}
@@ -30,7 +30,7 @@ function AuthLoader() {
             ease: "easeInOut",
             delay: 1,
           }}
-          className="absolute top-1/3 left-1/3 w-[300px] h-[300px] bg-violet-600/15 blur-[100px] rounded-full mix-blend-screen"
+          className="absolute top-1/3 left-1/3 w-[300px] h-[300px] bg-violet-600/15 blur-[100px] rounded-full "
         />
       </div>
 
@@ -121,33 +121,23 @@ export default function AppLayout() {
       initial={shouldAnimate ? { opacity: 0, scale: 0.99 } : false}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className="flex h-screen w-full overflow-hidden relative selection:bg-indigo-500/30 selection:text-indigo-200"
+      className="flex h-screen w-full overflow-hidden relative "
       style={{ background: "#050508" }}
     >
       {/* Global ambient background */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
         <div
-          className="absolute top-[-30%] left-[-10%] w-[700px] h-[700px] rounded-full opacity-30 mix-blend-screen"
+          className="absolute top-[-30%] left-[-10%] w-[700px] h-[700px] rounded-full opacity-30 "
           style={{
             background:
               "radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)",
-            filter: "blur(60px)",
           }}
         />
         <div
-          className="absolute bottom-[-30%] right-[-10%] w-[600px] h-[600px] rounded-full opacity-20 mix-blend-screen"
+          className="absolute bottom-[-30%] right-[-10%] w-[600px] h-[600px] rounded-full opacity-20 "
           style={{
             background:
               "radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)",
-            filter: "blur(80px)",
-          }}
-        />
-        {/* Grain overlay */}
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage:
-              "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E\")",
           }}
         />
       </div>

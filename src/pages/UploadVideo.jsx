@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
@@ -19,38 +19,46 @@ function formatBytes(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-const dropzoneVariants = {
-  idle: {
-    scale: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-    backgroundColor: "rgba(255, 255, 255, 0.02)",
-  },
-  hover: {
-    scale: 1.02,
-    borderColor: "rgba(99, 102, 241, 0.4)",
-    backgroundColor: "rgba(99, 102, 241, 0.05)",
-  },
-  drag: {
-    scale: 1.05,
-    borderColor: "rgba(99, 102, 241, 0.8)",
-    backgroundColor: "rgba(99, 102, 241, 0.15)",
-    boxShadow: "0 0 20px rgba(99, 102, 241, 0.3)",
-  },
-  success: {
-    scale: 1,
-    borderColor: "rgba(16, 185, 129, 0.5)",
-    backgroundColor: "rgba(16, 185, 129, 0.05)",
-  },
-  error: {
-    scale: 1,
-    borderColor: "rgba(244, 63, 94, 0.5)",
-    backgroundColor: "rgba(244, 63, 94, 0.05)",
-  },
-};
+function throttle(fn, ms) {
+  let last = 0;
+  return (...args) => {
+    const now = Date.now();
+    if (now - last >= ms) {
+      last = now;
+      fn(...args);
+    }
+  };
+}
 
-function DropZone({ file, accept, label, hint, icon: Icon, onChange, error }) {
+// ─── Dropzone ────────────────────────────────────────────────────────────────
+
+const DropZone = memo(function DropZone({
+  file,
+  accept,
+  label,
+  hint,
+  icon: Icon,
+  onChange,
+  error,
+}) {
   const [dragging, setDragging] = useState(false);
+  const [state, setState] = useState("idle"); // "idle" | "drag" | "success" | "error"
   const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (error) setState("error");
+    else if (dragging) setState("drag");
+    else if (file) setState("success");
+    else setState("idle");
+  }, [error, dragging, file]);
+
+  const stateStyles = {
+    idle: { border: "rgba(255,255,255,0.1)", bg: "rgba(255,255,255,0.02)" },
+    drag: { border: "rgba(99,102,241,0.8)", bg: "rgba(99,102,241,0.15)" },
+    success: { border: "rgba(16,185,129,0.5)", bg: "rgba(16,185,129,0.05)" },
+    error: { border: "rgba(244,63,94,0.5)", bg: "rgba(244,63,94,0.05)" },
+  };
+  const s = stateStyles[state];
 
   const handleDrop = useCallback(
     (e) => {
@@ -62,21 +70,26 @@ function DropZone({ file, accept, label, hint, icon: Icon, onChange, error }) {
     [onChange],
   );
 
-  const currentState = error
-    ? "error"
-    : dragging
-      ? "drag"
-      : file
-        ? "success"
-        : "idle";
+  const handleChange = useCallback(
+    (e) => {
+      onChange(e.target.files?.[0] ?? null);
+      if (inputRef.current) inputRef.current.value = "";
+    },
+    [onChange],
+  );
+
+  const handleClear = useCallback(
+    (e) => {
+      e.stopPropagation();
+      onChange(null);
+      if (inputRef.current) inputRef.current.value = "";
+    },
+    [onChange],
+  );
 
   return (
     <div>
-      <motion.div
-        variants={dropzoneVariants}
-        initial="idle"
-        animate={currentState}
-        whileHover={currentState === "idle" ? "hover" : currentState}
+      <div
         onClick={() => inputRef.current?.click()}
         onDragOver={(e) => {
           e.preventDefault();
@@ -85,29 +98,30 @@ function DropZone({ file, accept, label, hint, icon: Icon, onChange, error }) {
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
         className="relative w-full border-2 border-dashed rounded-3xl p-8 cursor-pointer overflow-hidden group"
+        style={{
+          borderColor: s.border,
+          backgroundColor: s.bg,
+          transition: "border-color 200ms ease, background-color 200ms ease",
+          contain: "layout style",
+        }}
       >
-        <motion.div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <div
+          className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-transparent
+                        opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+        />
 
         <div className="relative flex flex-col items-center gap-4 text-center z-10">
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="wait" initial={false}>
             {file ? (
               <motion.div
                 key="file"
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0, opacity: 0 }}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.18, ease: "easeOut" }}
                 className="flex flex-col items-center gap-3"
               >
-                <motion.div
-                  initial={{ rotate: -180 }}
-                  animate={{ rotate: 0 }}
-                  transition={{ type: "spring", bounce: 0.5 }}
-                >
-                  <CheckCircle2
-                    size={36}
-                    className="text-emerald-400 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]"
-                  />
-                </motion.div>
+                <CheckCircle2 size={36} className="text-emerald-400" />
                 <div>
                   <p className="text-sm font-semibold text-emerald-300 truncate max-w-xs">
                     {file.name}
@@ -120,21 +134,22 @@ function DropZone({ file, accept, label, hint, icon: Icon, onChange, error }) {
             ) : (
               <motion.div
                 key="empty"
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0, opacity: 0 }}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.18, ease: "easeOut" }}
                 className="flex flex-col items-center gap-3"
               >
-                <motion.div
-                  animate={dragging ? { y: [0, -8, 0] } : {}}
-                  transition={{ repeat: Infinity, duration: 1 }}
-                  className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shadow-inner"
+                <div
+                  className={`w-16 h-16 rounded-2xl bg-white/5 border border-white/10
+                                flex items-center justify-center shadow-inner
+                                ${dragging ? "animate-bounce" : ""}`}
                 >
                   <Icon
                     size={28}
                     className={dragging ? "text-indigo-400" : "text-slate-400"}
                   />
-                </motion.div>
+                </div>
                 <div>
                   <p className="text-sm font-medium text-slate-200">{label}</p>
                   <p className="text-xs text-slate-500 mt-1">{hint}</p>
@@ -144,109 +159,89 @@ function DropZone({ file, accept, label, hint, icon: Icon, onChange, error }) {
           </AnimatePresence>
         </div>
 
-        <AnimatePresence>
-          {file && (
-            <motion.button
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.5 }}
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onChange(null);
-              }}
-              className="absolute top-4 right-4 p-2 rounded-xl bg-white/10 text-slate-300 hover:text-rose-400 hover:bg-rose-500/20 backdrop-blur-md transition-colors z-20"
-            >
-              <X size={16} />
-            </motion.button>
-          )}
-        </AnimatePresence>
+        {file && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className="absolute top-4 right-4 p-2 rounded-xl bg-white/10 text-slate-300
+                       hover:text-rose-400 hover:bg-rose-500/20 transition-colors z-20"
+          >
+            <X size={16} />
+          </button>
+        )}
 
         <input
           ref={inputRef}
           type="file"
           accept={accept}
           className="sr-only"
-          onChange={(e) => onChange(e.target.files?.[0] ?? null)}
+          onChange={handleChange}
         />
-      </motion.div>
-      <AnimatePresence>
-        {error && (
-          <motion.p
-            initial={{ opacity: 0, y: -10, height: 0 }}
-            animate={{ opacity: 1, y: 0, height: "auto" }}
-            exit={{ opacity: 0, y: -10, height: 0 }}
-            className="mt-2 text-xs text-rose-400 flex items-center gap-1.5 font-medium"
-          >
-            <AlertTriangle size={14} />
-            {error}
-          </motion.p>
-        )}
-      </AnimatePresence>
+      </div>
+
+      <div
+        className="overflow-hidden transition-[max-height,opacity] duration-200"
+        style={{ maxHeight: error ? "40px" : "0px", opacity: error ? 1 : 0 }}
+      >
+        <p className="mt-2 text-xs text-rose-400 flex items-center gap-1.5 font-medium">
+          <AlertTriangle size={14} />
+          {error}
+        </p>
+      </div>
     </div>
   );
-}
+});
 
-function ProgressBar({ progress }) {
+// ─── Progress bar ─────────────────────────────────────────────────────────────
+
+const ProgressBar = memo(function ProgressBar({ progress }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-3 p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm"
+    <div
+      className="space-y-3 p-4 rounded-2xl border"
+      style={{
+        background: "rgba(255,255,255,0.04)",
+        borderColor: "rgba(255,255,255,0.08)",
+      }}
     >
       <div className="flex items-center justify-between text-xs">
         <span className="text-indigo-300 flex items-center gap-2 font-medium">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-          >
-            <Loader2 size={14} />
-          </motion.div>
+          <Loader2 size={14} className="animate-spin" />
           Processing & Uploading
         </span>
-        <motion.span
-          key={progress}
-          initial={{ scale: 1.5, color: "#fff" }}
-          animate={{ scale: 1, color: "#818cf8" }}
-          className="font-bold tabular-nums text-sm"
-        >
+        <span className="font-bold tabular-nums text-sm text-indigo-400">
           {progress}%
-        </motion.span>
+        </span>
       </div>
-      <div className="h-2.5 bg-black/40 rounded-full overflow-hidden shadow-inner relative">
+      <div className="h-2 bg-black/40 rounded-full overflow-hidden relative">
         <motion.div
-          className="absolute top-0 left-0 h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full"
-          initial={{ width: 0 }}
-          animate={{ width: `${progress}%` }}
-          transition={{ type: "spring", bounce: 0, duration: 0.5 }}
-        >
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent"
-            animate={{ x: ["-100%", "200%"] }}
-            transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
-          />
-        </motion.div>
+          className="absolute inset-y-0 left-0 w-full origin-left bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full"
+          initial={{ scaleX: 0 }}
+          animate={{ scaleX: progress / 100 }}
+          transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+        />
       </div>
-    </motion.div>
+    </div>
   );
-}
+});
+
+// ─── Animation variants ───────────────────────────────────────────────────────
 
 const formVariants = {
   hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.055 } },
+};
+const itemVariants = {
+  hidden: { opacity: 0, y: 16 },
   show: {
     opacity: 1,
-    transition: { staggerChildren: 0.1 },
+    y: 0,
+    transition: { duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] },
   },
 };
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", bounce: 0.4 } },
-};
-
+// ─── Main component ───────────────────────────────────────────────────────────
 export default function UploadVideo() {
   const navigate = useNavigate();
-
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [videoFile, setVideoFile] = useState(null);
@@ -258,15 +253,21 @@ export default function UploadVideo() {
   const [errors, setErrors] = useState({});
   const [serverError, setServerError] = useState("");
 
-  const handleThumbnail = (file) => {
+  const handleThumbnail = useCallback((file) => {
     setThumbnail(file);
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setThumbPreview(url);
-    } else {
-      setThumbPreview(null);
-    }
-  };
+    setThumbPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return file ? URL.createObjectURL(file) : null;
+    });
+  }, []);
+
+  // Revoke object URL on unmount
+  useEffect(() => {
+    return () => {
+      if (thumbPreview) URL.revokeObjectURL(thumbPreview);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const validate = () => {
     const e = {};
@@ -281,7 +282,6 @@ export default function UploadVideo() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate() || uploading) return;
-
     setUploading(true);
     setServerError("");
     setProgress(0);
@@ -292,15 +292,15 @@ export default function UploadVideo() {
     form.append("videoFile", videoFile);
     form.append("thumbnail", thumbnail);
 
+    const onProgress = throttle((ev) => {
+      setProgress(Math.round((ev.loaded * 100) / ev.total));
+    }, 100);
+
     try {
       const res = await axios.post("/api/v2/videos", form, {
         headers: { "Content-Type": "multipart/form-data" },
-        onUploadProgress: (e) => {
-          const pct = Math.round((e.loaded * 100) / e.total);
-          setProgress(pct);
-        },
+        onUploadProgress: onProgress,
       });
-
       setSuccess(true);
       const newVideoId = res.data?.data?._id;
       setTimeout(
@@ -317,57 +317,59 @@ export default function UploadVideo() {
     }
   };
 
+  // ── Success screen ──────────────────────────────────────────────────────────
   if (success) {
     return (
-      <div className="min-h-screen bg-[#050508] flex items-center justify-center p-6 overflow-hidden relative">
+      <div className="min-h-screen bg-[#050508] flex items-center justify-center p-6">
         <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
+          initial={{ opacity: 0, scale: 0.88 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: "spring", duration: 1, bounce: 0.5 }}
-          className="relative z-10 text-center space-y-6 bg-white/5 p-12 rounded-[3rem] border border-white/10 backdrop-blur-2xl shadow-2xl"
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="text-center space-y-6 p-12 rounded-[3rem] border border-white/10"
+          style={{ background: "rgba(255,255,255,0.04)" }}
         >
           <motion.div
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: "spring", delay: 0.2, bounce: 0.6 }}
-            className="w-24 h-24 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 p-1 mx-auto shadow-[0_0_40px_rgba(16,185,129,0.4)]"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.35, delay: 0.15, ease: "easeOut" }}
+            className="w-24 h-24 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 p-1 mx-auto"
           >
             <div className="w-full h-full bg-[#050508] rounded-full flex items-center justify-center">
               <CheckCircle2 size={40} className="text-emerald-400" />
             </div>
           </motion.div>
           <div>
-            <motion.h2
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mb-2"
-            >
+            <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mb-2">
               Upload Complete!
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-              className="text-slate-400 font-medium"
-            >
+            </h2>
+            <p className="text-slate-400 font-medium">
               Preparing your masterpiece for the world...
-            </motion.p>
+            </p>
           </div>
         </motion.div>
-
-        <motion.div
-          animate={{ scale: [1, 2, 2], opacity: [0.5, 0, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="absolute w-[500px] h-[500px] bg-emerald-500/20 rounded-full blur-[100px] -z-10"
-        />
       </div>
     );
   }
 
+  // ── Main form ───────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#050508] p-4 sm:p-8 relative overflow-hidden text-slate-200">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none" />
+      <svg
+        aria-hidden="true"
+        className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none select-none"
+        width="800"
+        height="400"
+        viewBox="0 0 800 400"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <defs>
+          <radialGradient id="ambientGlow" cx="50%" cy="30%" r="60%">
+            <stop offset="0%" stopColor="rgba(99,102,241,0.10)" />
+            <stop offset="100%" stopColor="rgba(99,102,241,0)" />
+          </radialGradient>
+        </defs>
+        <ellipse cx="400" cy="200" rx="400" ry="200" fill="url(#ambientGlow)" />
+      </svg>
 
       <motion.div
         initial="hidden"
@@ -375,11 +377,16 @@ export default function UploadVideo() {
         variants={formVariants}
         className="max-w-3xl mx-auto relative z-10"
       >
+        {/* Header badge */}
         <motion.div
           variants={itemVariants}
-          className="flex items-center gap-4 mb-10 bg-white/5 p-4 rounded-3xl border border-white/10 backdrop-blur-xl w-max pr-8 shadow-xl"
+          className="flex items-center gap-4 mb-10 p-4 rounded-3xl border border-white/10 w-max pr-8 shadow-xl"
+          style={{ background: "rgba(255,255,255,0.04)" }}
         >
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+          <div
+            className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600
+                          flex items-center justify-center shadow-lg shadow-indigo-500/30"
+          >
             <Film size={22} className="text-white" />
           </div>
           <div>
@@ -394,9 +401,11 @@ export default function UploadVideo() {
 
         <form
           onSubmit={handleSubmit}
-          className="space-y-8 bg-white/5 p-6 sm:p-10 rounded-[2.5rem] border border-white/10 backdrop-blur-xl shadow-2xl"
+          className="space-y-8 p-6 sm:p-10 rounded-[2.5rem] border border-white/10 shadow-2xl"
+          style={{ background: "rgba(10,10,18,0.97)" }}
           noValidate
         >
+          {/* Video drop */}
           <motion.div variants={itemVariants}>
             <label className="flex items-center gap-2 text-sm font-bold text-slate-300 mb-3 ml-1">
               <FileVideo size={16} className="text-indigo-400" />
@@ -413,38 +422,48 @@ export default function UploadVideo() {
             />
           </motion.div>
 
+          {/* Thumbnail */}
           <motion.div variants={itemVariants}>
             <label className="flex items-center gap-2 text-sm font-bold text-slate-300 mb-3 ml-1">
               <ImagePlus size={16} className="text-purple-400" />
               Cover Thumbnail <span className="text-rose-500">*</span>
             </label>
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="wait" initial={false}>
               {thumbPreview ? (
                 <motion.div
                   key="preview"
-                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                  className="relative w-full rounded-3xl overflow-hidden border-2 border-purple-500/30 bg-black shadow-2xl shadow-purple-500/20 group"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                  className="relative w-full rounded-3xl overflow-hidden border-2 border-purple-500/30 bg-black group"
                   style={{ aspectRatio: "16/9" }}
                 >
                   <img
                     src={thumbPreview}
                     alt="Thumbnail preview"
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                  <motion.button
-                    whileHover={{ scale: 1.1, rotate: 90 }}
-                    whileTap={{ scale: 0.9 }}
+                  <div
+                    className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  />
+                  <button
                     type="button"
                     onClick={() => handleThumbnail(null)}
-                    className="absolute top-4 right-4 p-2.5 rounded-full bg-black/50 backdrop-blur-md text-white hover:bg-rose-500 shadow-xl transition-colors"
+                    className="absolute top-4 right-4 p-2.5 rounded-full bg-black/50 text-white
+                               hover:bg-rose-500 transition-colors"
                   >
                     <X size={16} />
-                  </motion.button>
-                  <div className="absolute bottom-4 left-4 px-4 py-2 rounded-xl bg-black/50 backdrop-blur-md border border-white/10 text-emerald-400 text-sm font-bold flex items-center gap-2 shadow-xl transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+                  </button>
+                  <div
+                    className="absolute bottom-4 left-4 px-4 py-2 rounded-xl bg-black/50 border border-white/10
+                                  text-emerald-400 text-sm font-bold flex items-center gap-2
+                                  translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100
+                                  transition-[transform,opacity] duration-300"
+                  >
                     <CheckCircle2 size={16} /> Cover Applied
                   </div>
                 </motion.div>
@@ -454,6 +473,7 @@ export default function UploadVideo() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
                 >
                   <DropZone
                     file={thumbnail}
@@ -469,56 +489,50 @@ export default function UploadVideo() {
             </AnimatePresence>
           </motion.div>
 
+          {/* Text fields */}
           <motion.div variants={itemVariants} className="grid gap-6">
+            {/* Title */}
             <div className="relative group">
               <label
                 htmlFor="title"
-                className="block text-sm font-bold text-slate-300 mb-2 ml-1 transition-colors group-focus-within:text-indigo-400"
+                className="block text-sm font-bold text-slate-300 mb-2 ml-1
+                                transition-colors group-focus-within:text-indigo-400"
               >
                 Title <span className="text-rose-500">*</span>
               </label>
-              <div className="relative">
-                <input
-                  id="title"
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  maxLength={100}
-                  placeholder="Give your masterpiece a name..."
-                  className={`w-full px-5 py-4 rounded-2xl text-base text-white placeholder-slate-500 bg-black/40 border-2 outline-none transition-all duration-300 shadow-inner ${
-                    errors.title
-                      ? "border-rose-500/50 focus:border-rose-500 focus:bg-rose-500/5"
-                      : "border-white/10 focus:border-indigo-500 focus:bg-indigo-500/5 focus:shadow-[0_0_20px_rgba(99,102,241,0.2)]"
-                  }`}
-                />
-              </div>
-              <div className="flex justify-between mt-2 ml-1">
-                <AnimatePresence>
-                  {errors.title ? (
-                    <motion.p
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0 }}
-                      className="text-xs font-medium text-rose-400"
-                    >
-                      {errors.title}
-                    </motion.p>
-                  ) : (
-                    <span />
-                  )}
-                </AnimatePresence>
+              <input
+                id="title"
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                maxLength={100}
+                placeholder="Give your masterpiece a name..."
+                className={`w-full px-5 py-4 rounded-2xl text-base text-white placeholder-slate-500
+                            bg-black/40 border-2 outline-none shadow-inner
+                            transition-[border-color] duration-150
+                            ${errors.title ? "border-rose-500/60 focus:border-rose-500" : "border-white/10 focus:border-indigo-500"}`}
+              />
+              <div className="flex items-center justify-between mt-2 ml-1 min-h-[1.25rem]">
+                {errors.title && (
+                  <p className="text-xs font-medium text-rose-400">
+                    {errors.title}
+                  </p>
+                )}
                 <span
-                  className={`text-xs font-medium tabular-nums transition-colors ${title.length > 90 ? "text-amber-400" : "text-slate-500"}`}
+                  className={`text-xs font-medium tabular-nums ml-auto
+                                  ${title.length > 90 ? "text-amber-400" : "text-slate-500"}`}
                 >
                   {title.length}/100
                 </span>
               </div>
             </div>
 
+            {/* Description */}
             <div className="relative group">
               <label
                 htmlFor="description"
-                className="block text-sm font-bold text-slate-300 mb-2 ml-1 transition-colors group-focus-within:text-purple-400"
+                className="block text-sm font-bold text-slate-300 mb-2 ml-1
+                                transition-colors group-focus-within:text-purple-400"
               >
                 Description <span className="text-rose-500">*</span>
               </label>
@@ -529,27 +543,17 @@ export default function UploadVideo() {
                 maxLength={2000}
                 rows={5}
                 placeholder="What's this video about? Add links, chapters, and details here..."
-                className={`w-full px-5 py-4 rounded-2xl text-base text-white placeholder-slate-500 bg-black/40 border-2 outline-none transition-all duration-300 resize-none shadow-inner ${
-                  errors.description
-                    ? "border-rose-500/50 focus:border-rose-500 focus:bg-rose-500/5"
-                    : "border-white/10 focus:border-purple-500 focus:bg-purple-500/5 focus:shadow-[0_0_20px_rgba(168,85,247,0.2)]"
-                }`}
+                className={`w-full px-5 py-4 rounded-2xl text-base text-white placeholder-slate-500
+                            bg-black/40 border-2 outline-none resize-none shadow-inner
+                            transition-[border-color] duration-150
+                            ${errors.description ? "border-rose-500/60 focus:border-rose-500" : "border-white/10 focus:border-purple-500"}`}
               />
-              <div className="flex justify-between mt-2 ml-1">
-                <AnimatePresence>
-                  {errors.description ? (
-                    <motion.p
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0 }}
-                      className="text-xs font-medium text-rose-400"
-                    >
-                      {errors.description}
-                    </motion.p>
-                  ) : (
-                    <span />
-                  )}
-                </AnimatePresence>
+              <div className="flex items-center justify-end mt-2 ml-1 min-h-[1.25rem]">
+                {errors.description && (
+                  <p className="text-xs font-medium text-rose-400 mr-auto">
+                    {errors.description}
+                  </p>
+                )}
                 <span className="text-xs font-medium text-slate-500 tabular-nums">
                   {description.length}/2000
                 </span>
@@ -557,81 +561,49 @@ export default function UploadVideo() {
             </div>
           </motion.div>
 
-          <AnimatePresence>
-            {serverError && (
-              <motion.div
-                initial={{ opacity: 0, height: 0, scale: 0.95 }}
-                animate={{ opacity: 1, height: "auto", scale: 1 }}
-                exit={{ opacity: 0, height: 0, scale: 0.95 }}
-                className="overflow-hidden"
-              >
-                <div className="flex items-center gap-3 px-5 py-4 rounded-2xl bg-rose-500/10 border-l-4 border-rose-500 text-rose-400 text-sm font-bold shadow-lg">
-                  <AlertTriangle size={18} className="shrink-0" />
-                  {serverError}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <div
+            className="overflow-hidden transition-[max-height,opacity] duration-200"
+            style={{
+              maxHeight: serverError ? "80px" : "0px",
+              opacity: serverError ? 1 : 0,
+            }}
+          >
+            <div
+              className="flex items-center gap-3 px-5 py-4 rounded-2xl bg-rose-500/10
+                            border-l-4 border-rose-500 text-rose-400 text-sm font-bold"
+            >
+              <AlertTriangle size={18} className="shrink-0" />
+              {serverError}
+            </div>
+          </div>
 
-          <AnimatePresence mode="wait">
-            {uploading && (
-              <motion.div
-                key="progress"
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-              >
-                <ProgressBar progress={progress} />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {uploading && <ProgressBar progress={progress} />}
 
-          <motion.div variants={itemVariants} className="pt-4">
-            <motion.button
-              whileHover={
-                !uploading
-                  ? {
-                      scale: 1.02,
-                      boxShadow: "0 20px 40px -10px rgba(99,102,241,0.5)",
-                    }
-                  : {}
-              }
-              whileTap={!uploading ? { scale: 0.98 } : {}}
+          <motion.div variants={itemVariants} className="pt-2">
+            <button
               type="submit"
               disabled={uploading}
-              className="relative w-full py-4 rounded-2xl text-base font-black text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-500/50 disabled:opacity-70 disabled:cursor-not-allowed overflow-hidden group shadow-xl shadow-indigo-500/20 transition-all"
+              className="relative w-full py-4 rounded-2xl text-base font-black text-white
+             bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600
+             focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-500/50
+             disabled:opacity-70 disabled:cursor-not-allowed
+             shadow-[0_8px_24px_rgba(99,102,241,0.3)]
+             hover:shadow-[0_16px_40px_rgba(99,102,241,0.45)]
+             hover:brightness-110 active:scale-[0.99]
+             transition-[box-shadow,filter,transform] duration-200"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
-
-              <AnimatePresence mode="wait">
-                {uploading ? (
-                  <motion.span
-                    key="uploading"
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: -20, opacity: 0 }}
-                    className="flex items-center justify-center gap-3"
-                  >
-                    <Loader2 size={20} className="animate-spin" />
-                    Publishing...
-                  </motion.span>
-                ) : (
-                  <motion.span
-                    key="publish"
-                    initial={{ y: -20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: 20, opacity: 0 }}
-                    className="flex items-center justify-center gap-3 tracking-wide"
-                  >
-                    <Upload
-                      size={20}
-                      className="group-hover:-translate-y-1 transition-transform"
-                    />
-                    Publish Video
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </motion.button>
+              {uploading ? (
+                <span className="flex items-center justify-center gap-3">
+                  <Loader2 size={20} className="animate-spin" />
+                  Publishing...
+                </span>
+              ) : (
+                <span className="flex items-center justify-center gap-3 tracking-wide">
+                  <Upload size={20} />
+                  Publish Video
+                </span>
+              )}
+            </button>
           </motion.div>
         </form>
       </motion.div>

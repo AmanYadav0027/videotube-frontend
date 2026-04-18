@@ -353,7 +353,7 @@ export default function Support() {
       {/* Ambient orbs */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <div
-          className="absolute top-0 left-1/3 w-[500px] h-[400px] opacity-[0.06] mix-blend-screen"
+          className="absolute top-0 left-1/3 w-[500px] h-[400px] opacity-[0.06] "
           style={{
             background:
               "radial-gradient(ellipse, rgba(99,102,241,1) 0%, transparent 70%)",
@@ -361,7 +361,7 @@ export default function Support() {
           }}
         />
         <div
-          className="absolute bottom-0 right-1/4 w-[400px] h-[400px] opacity-[0.05] mix-blend-screen"
+          className="absolute bottom-0 right-1/4 w-[400px] h-[400px] opacity-[0.05] "
           style={{
             background:
               "radial-gradient(ellipse, rgba(139,92,246,1) 0%, transparent 70%)",

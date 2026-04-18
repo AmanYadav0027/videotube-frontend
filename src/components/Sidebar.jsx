@@ -34,6 +34,7 @@ const ROUTE_MAP = {
   healthcheck: "/healthcheck",
   notifications: "/notifications",
   support: "/support",
+  settings: "/settings",
   about: "/about",
 };
 
@@ -46,6 +47,7 @@ const PROTECTED = new Set([
   "upload",
   "dashboard",
   "notifications",
+  "settings",
 ]);
 
 const PRIMARY_NAV = [
@@ -63,6 +65,7 @@ const PRIMARY_NAV = [
 const SECONDARY_NAV = [
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "support", label: "Support", icon: HelpCircle },
+  { id: "settings", label: "Settings", icon: Settings },
 ];
 
 // ─── NavItem ──────────────────────────────────────────────────────────────────
@@ -70,21 +73,15 @@ function NavItem({ item, collapsed, active, onClick }) {
   const Icon = item.icon;
   return (
     <li>
-      <motion.button
+      <button
         onClick={() => onClick(item.id)}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.97 }}
-        transition={spring}
         aria-current={active ? "page" : undefined}
         className={`
           group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
           text-sm font-medium transition-colors duration-150 outline-none
+          hover:scale-[1.02] active:scale-[0.97] transition-transform
           focus-visible:ring-2 focus-visible:ring-indigo-400/60
-          ${
-            active
-              ? "text-indigo-300 border border-indigo-500/25"
-              : "text-slate-400 hover:text-slate-200 border border-transparent hover:border-white/[0.06]"
-          }
+          ${active ? "text-indigo-300 border border-indigo-500/25" : "text-slate-400 hover:text-slate-200 border border-transparent hover:border-white/[0.06]"}
           ${collapsed ? "justify-center px-2" : ""}
         `}
         style={
@@ -141,18 +138,16 @@ function NavItem({ item, collapsed, active, onClick }) {
           <span
             className="
             pointer-events-none absolute left-full ml-3 px-2.5 py-1.5
-            bg-slate-800/90 backdrop-blur-md text-slate-100 text-xs font-semibold
+          bg-slate-800 text-slate-100 text-xs     font-semibold
             rounded-xl whitespace-nowrap opacity-0 -translate-x-2 scale-95 origin-left
             group-hover:opacity-100 group-hover:translate-x-0 group-hover:scale-100
             transition-all duration-200 shadow-xl z-50 border border-white/10
-            before:content-[''] before:absolute before:right-full before:top-1/2
-            before:-translate-y-1/2 before:border-4 before:border-transparent before:border-r-slate-800
-          "
+            "
           >
             {item.label}
           </span>
         )}
-      </motion.button>
+      </button>
     </li>
   );
 }
@@ -190,6 +185,7 @@ export default function Sidebar() {
       return;
     }
     navigate(ROUTE_MAP[id] ?? "/");
+    // ← no setCollapsed call here — sidebar state is preserved
   };
 
   return (
@@ -203,8 +199,24 @@ export default function Sidebar() {
         boxShadow: "4px 0 30px rgba(0,0,0,0.5)",
       }}
     >
-      {/* Ambient orb */}
-      <div className="pointer-events-none absolute top-0 left-0 w-48 h-48 bg-indigo-600/10 blur-[80px] rounded-full -translate-x-1/2 -translate-y-1/2" />
+      <svg
+        aria-hidden="true"
+        className="absolute inset-0 w-full h-full pointer-events-none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <defs>
+          <radialGradient id="orb1" cx="20%" cy="0%" r="50%">
+            <stop offset="0%" stopColor="rgba(99,102,241,0.12)" />
+            <stop offset="100%" stopColor="transparent" />
+          </radialGradient>
+          <radialGradient id="orb2" cx="80%" cy="100%" r="50%">
+            <stop offset="0%" stopColor="rgba(236,72,153,0.07)" />
+            <stop offset="100%" stopColor="transparent" />
+          </radialGradient>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#orb1)" />
+        <rect width="100%" height="100%" fill="url(#orb2)" />
+      </svg>
 
       {/* Header */}
       <header
@@ -234,6 +246,7 @@ export default function Sidebar() {
           )}
         </AnimatePresence>
 
+        {/* FIX: ONLY the hamburger button toggles collapsed — nothing else */}
         <motion.button
           onClick={() => setCollapsed((v) => !v)}
           whileHover={{ scale: 1.08, backgroundColor: "rgba(99,102,241,0.12)" }}

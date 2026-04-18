@@ -1,8 +1,70 @@
 @import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap");
 @import "tailwindcss";
 
+/* ── Scrollbar ───────────────────────────────────────────────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.25) transparent;
+}
+*::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.25);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.5);
+}
+
+/* ── Scroll performance ──────────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background-color: #121212;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  text-rendering: optimizeSpeed;
+}
+
+/* 1. Disable hovers to save standard paint cycles */
+.is-scrolling * {
+  pointer-events: none !important;
+}
+
+/* 2. FREEZE expensive background animations while scrolling */
+.is-scrolling .navbar-header::before,
+.is-scrolling .navbar-header::after,
+.is-scrolling .navbar-logo-dot {
+  animation-play-state: paused !important;
+}
+
+/* 3. Temporarily turn off backdrop-blur  */
+.is-scrolling [class*="backdrop-blur"] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ── Selection ───────────────────────────────────────────────────────────── */
+::selection {
+  background: rgba(99, 102, 241, 0.3);
+  color: #c7d2fe;
+}
+
+/* Custom Rose Selection for specific pages */
+.theme-rose ::selection {
+  background-color: rgba(244, 63, 94, 0.3); /* rose-500/30 */
+  color: #fecdd3; /* text-rose-200 */
+}
+.theme-rose ::-moz-selection {
+  background-color: rgba(244, 63, 94, 0.3);
+  color: #fecdd3;
 }
 
 .navbar-root {
@@ -28,54 +90,12 @@ body {
   z-index: 100;
   overflow: hidden;
 }
-
-.navbar-header::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    120deg,
-    rgba(99, 102, 241, 0.08) 0%,
-    rgba(236, 72, 153, 0.06) 40%,
-    rgba(16, 185, 129, 0.05) 100%
-  );
-  background-size: 300% 300%;
-  animation: auroraShift 8s ease infinite;
-  pointer-events: none;
-}
-
-.navbar-header::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 60%;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(99, 102, 241, 0.8),
-    rgba(236, 72, 153, 0.6),
-    transparent
-  );
-  animation: shimmerLine 4s ease-in-out infinite;
-}
-
-@keyframes auroraShift {
-  0%,
-  100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
 @keyframes shimmerLine {
   0% {
-    left: -60%;
+    transform: translateX(-150%);
   }
   100% {
-    left: 140%;
+    transform: translateX(250%);
   }
 }
 
@@ -99,15 +119,6 @@ body {
   opacity: 0.8;
 }
 
-.navbar-logo-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1, #ec4899);
-  box-shadow: 0 0 10px rgba(99, 102, 241, 0.7);
-  animation: pulseDot 2.4s ease-in-out infinite;
-  flex-shrink: 0;
-}
 @keyframes pulseDot {
   0%,
   100% {
@@ -285,21 +296,22 @@ body {
 .navbar-drawer {
   background: #0d0d14;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  overflow: hidden;
-  max-height: 0;
+  display: grid;
+  grid-template-rows: 0fr; /* Start collapsed */
   opacity: 0;
   transition:
-    max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1),
     opacity 0.28s ease;
 }
+
 /* open when checkbox is checked */
 .navbar-toggle:checked ~ .navbar-drawer {
-  max-height: 360px;
+  grid-template-rows: 1fr; /* Expand to exact content height! */
   opacity: 1;
 }
 
 .navbar-drawer-inner {
-  padding: 14px 20px 22px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -449,4 +461,39 @@ body {
   .navbar-hamburger-label {
     display: flex;
   }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.025) 25%,
+    rgba(255, 255, 255, 0.06) 50%,
+    rgba(255, 255, 255, 0.025) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.7s linear infinite;
+}
+
+.ambient-orbs {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Nuclear option — freeze all blur orbs */
+[class*="blur-["] {
+  animation: none !important;
+  transform: none !important;
+  opacity: 1 !important;
 }

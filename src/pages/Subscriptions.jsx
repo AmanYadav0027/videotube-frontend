@@ -205,9 +205,9 @@ export default function Subscriptions() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050508] p-4 sm:p-8 relative overflow-hidden selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div className="min-h-screen bg-[#050508] p-4 sm:p-8 relative overflow-hidden ">
       {/* Ambient Background Glows */}
-      <div className="fixed inset-0 z-0 pointer-events-none flex justify-center opacity-30 mix-blend-screen">
+      <div className="fixed inset-0 z-0 pointer-events-none flex justify-center opacity-30 ">
         <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-indigo-600/10 blur-[120px] rounded-full" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-purple-600/10 blur-[100px] rounded-full" />
       </div>

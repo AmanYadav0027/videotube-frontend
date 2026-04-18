@@ -159,7 +159,7 @@ export default function LikedVideos() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#050505] p-4 sm:p-8 relative overflow-hidden selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div className="min-h-screen bg-[#050505] p-4 sm:p-8 relative overflow-hidden ">
       {/* Ambient glows */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <motion.div

@@ -509,12 +509,6 @@ function AiInsights({ video, videoRef }) {
             }`}
           >
             <BookOpen size={16} /> Summary
-            {activeTab === "summary" && (
-              <motion.div
-                layoutId="activeTabAi"
-                className="absolute -bottom-[2px] left-0 right-0 h-[2px] bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.8)]"
-              />
-            )}
           </button>
           <button
             onClick={() => setActiveTab("chapters")}
@@ -530,12 +524,6 @@ function AiInsights({ video, videoRef }) {
             >
               {aiChapters.length}
             </span>
-            {activeTab === "chapters" && (
-              <motion.div
-                layoutId="activeTabAi"
-                className="absolute -bottom-[2px] left-0 right-0 h-[2px] bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.8)]"
-              />
-            )}
           </button>
         </div>
       )}
@@ -604,7 +592,6 @@ function ChatMessage({ role, text }) {
   const isUser = role === "user";
   return (
     <motion.div
-      layout
       initial={{ opacity: 0, y: 15, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={smoothSpring}
@@ -890,7 +877,6 @@ function CommentRow({ comment, currentUserId, onDelete }) {
 
   return (
     <motion.div
-      layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
@@ -1564,9 +1550,9 @@ export default function Watch() {
   const isLongDesc = (video?.description?.length ?? 0) > 200;
 
   return (
-    <div className="min-h-screen bg-[#050505] p-4 sm:p-6 lg:p-8 relative overflow-x-hidden selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div className="min-h-screen bg-[#050505] p-4 sm:p-6 lg:p-8 relative overflow-x-hidden ">
       {/* Ambient Glows */}
-      <div className="fixed inset-0 z-0 pointer-events-none flex justify-center opacity-30 mix-blend-screen">
+      <div className="fixed inset-0 z-0 pointer-events-none flex justify-center opacity-30 ">
         <div className="absolute top-[-10%] left-[-10%] w-[800px] h-[800px] bg-indigo-600/10 blur-[150px] rounded-full" />
       </div>
 

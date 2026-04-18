@@ -258,10 +258,10 @@ export default function Channel() {
   const isOwnChannel = currentUser?.username === username;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] relative selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div className="min-h-screen bg-[#0a0a0f] relative ">
       {/* Ambient background */}
       <div className="absolute inset-0 z-0 pointer-events-none flex justify-center overflow-hidden">
-        <div className="absolute top-[-20%] w-[800px] h-[600px] bg-indigo-500/8 blur-[130px] rounded-full mix-blend-screen opacity-50" />
+        <div className="absolute top-[-20%] w-[800px] h-[600px] bg-indigo-500/8 blur-[130px] rounded-full  opacity-50" />
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-10 relative z-10">

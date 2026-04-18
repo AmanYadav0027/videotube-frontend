@@ -221,7 +221,7 @@ export default function Healthcheck() {
 
             {/* Service checks */}
             <div className="space-y-2 bg-black/20 p-4 rounded-2xl border border-white/5">
-              <AnimatePresence mode="wait">
+              <div className="space-y-2">
                 {checks.map((c, idx) => {
                   const Icon = c.icon;
                   return (
@@ -290,7 +290,7 @@ export default function Healthcheck() {
                     </motion.div>
                   );
                 })}
-              </AnimatePresence>
+              </div>
             </div>
 
             {/* Terminal message */}

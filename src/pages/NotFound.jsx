@@ -33,7 +33,7 @@ export default function NotFound() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-6 overflow-hidden relative selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-6 overflow-hidden relative ">
       {/* Layered ambient glows */}
       <div className="pointer-events-none fixed inset-0 z-0">
         <div className="absolute top-[-15%] left-[-10%] w-[600px] h-[600px] bg-indigo-600/12 rounded-full blur-[130px]" />
@@ -48,7 +48,7 @@ export default function NotFound() {
         className="text-center space-y-8 max-w-md relative z-10"
       >
         {/* Floating 404 */}
-        <motion.div variants={itemVariants} className="relative select-none">
+        <motion.div variants={itemVariants} className=" relative select-none">
           <motion.p
             variants={floatVariants}
             animate="animate"
@@ -70,7 +70,7 @@ export default function NotFound() {
         </motion.div>
 
         {/* Text content */}
-        <motion.div variants={itemVariants} className="space-y-3">
+        <motion.div variants={itemVariants} className=" space-y-3">
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
             Lost in space 🚀
           </h1>

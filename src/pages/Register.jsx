@@ -14,6 +14,8 @@ import {
   Upload,
   AlertTriangle,
   Loader2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 // --- Animation Config ---
@@ -43,36 +45,72 @@ const itemVariants = {
 };
 
 // --- Helpers ---
-function inputCls(err) {
+// ADDED: theme parameter (defaults to "indigo")
+function inputCls(err, theme = "indigo") {
+  const glowColor =
+    theme === "amber"
+      ? "focus:shadow-[0_0_20px_rgba(253,224,71,0.15)]" // Amber glow
+      : "focus:shadow-[0_0_20px_rgba(99,102,241,0.15)]"; // Indigo glow
+
   return [
-    "block w-full pl-10 pr-4 py-3.5 rounded-2xl text-sm font-medium",
-    "bg-black/20 border text-slate-100 placeholder-slate-500",
+    "relative w-full h-full pl-10 pr-4 py-3.5 rounded-[15px] text-sm font-medium",
+    "bg-[#0A0A0A] text-slate-100 placeholder-slate-500",
     "focus:outline-none transition-all duration-300 shadow-inner",
-    err
-      ? "border-rose-500/50 focus:border-rose-500 focus:bg-rose-500/10 focus:shadow-[0_0_20px_rgba(244,63,94,0.15)]"
-      : "border-white/10 focus:border-indigo-500 focus:bg-indigo-500/10 hover:border-white/20 focus:shadow-[0_0_20px_rgba(99,102,241,0.15)]",
+    "[&:-webkit-autofill]:shadow-[0_0_0_1000px_#0A0A0A_inset] [&:-webkit-autofill]:-webkit-text-fill-color-white",
+    err ? "shadow-[0_0_20px_rgba(244,63,94,0.15)]" : glowColor,
   ].join(" ");
 }
 
-function Field({ id, label, icon: Icon, error, children, required = true }) {
+// ADDED: theme prop (defaults to "indigo")
+function Field({
+  id,
+  label,
+  icon: Icon,
+  error,
+  children,
+  required = true,
+  theme = "indigo",
+}) {
+  // Conditionally pick the text color and gradient based on the theme prop
+  const focusTextColor =
+    theme === "amber"
+      ? "group-focus-within:text-amber-400"
+      : "group-focus-within:text-indigo-400";
+
+  const gradientBg =
+    theme === "amber"
+      ? "bg-[conic-gradient(from_90deg_at_50%_50%,transparent_60%,#D97706_80%,#FDE047_100%)]"
+      : "bg-[conic-gradient(from_90deg_at_50%_50%,transparent_70%,#6366f1_100%)]";
+
   return (
     <motion.div variants={itemVariants} className="group relative">
       <label
         htmlFor={id}
-        className="block text-xs font-bold text-slate-400 mb-1.5 transition-colors duration-300 group-focus-within:text-indigo-400 ml-1"
+        className={`block text-xs font-bold text-slate-400 mb-1.5 transition-colors duration-300 ml-1 ${focusTextColor}`}
       >
         {label} {required && <span className="text-rose-500">*</span>}
       </label>
-      <div className="relative">
+
+      <div className="relative rounded-2xl p-[1.5px] overflow-hidden">
+        {/* Uses the dynamic gradient */}
+        <div
+          className={`absolute inset-[-1000%] animate-[spin_3s_linear_infinite] ${gradientBg} opacity-50 group-focus-within:opacity-100 transition-opacity duration-500`}
+        />
+
+        <div className="absolute inset-0 rounded-2xl border border-white/10 group-focus-within:border-transparent transition-colors pointer-events-none" />
+
+        {children}
+
+        {/* Uses the dynamic text color for the icon */}
         <motion.span
-          className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none group-focus-within:text-indigo-400 transition-colors duration-300"
+          className={`absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none transition-colors duration-300 z-10 ${focusTextColor}`}
           animate={error ? { x: [0, -5, 5, -5, 5, 0] } : {}}
           transition={{ duration: 0.4 }}
         >
           <Icon size={16} />
         </motion.span>
-        {children}
       </div>
+
       <AnimatePresence mode="wait">
         {error && (
           <motion.p
@@ -98,6 +136,7 @@ export default function Register() {
   } = useForm();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [avatarName, setAvatarName] = useState("");
   const [coverName, setCoverName] = useState("");
@@ -119,7 +158,7 @@ export default function Register() {
     try {
       const response = await axios.post("/api/v2/users/register", formData);
       if (response.status === 201) {
-        navigate("/login");
+        navigate("/verify-email-sent");
       }
     } catch (err) {
       setError(
@@ -131,9 +170,9 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] flex items-center justify-center px-4 py-12 relative overflow-hidden selection:bg-indigo-500/30 selection:text-indigo-200">
+    <div className="min-h-screen bg-[#050505] flex items-center justify-center px-4 py-12 relative overflow-hidden ">
       {/* Ambient Background Glows */}
-      <div className="fixed inset-0 z-0 pointer-events-none flex justify-center opacity-40 mix-blend-screen">
+      <div className="fixed inset-0 z-0 pointer-events-none flex justify-center opacity-40 ">
         <motion.div
           animate={{
             scale: [1, 1.2, 1],
@@ -141,7 +180,7 @@ export default function Register() {
             opacity: [0.2, 0.4, 0.2],
           }}
           transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-          className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[100px]"
+          className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[40px]"
         />
         <motion.div
           animate={{
@@ -150,7 +189,7 @@ export default function Register() {
             opacity: [0.1, 0.3, 0.1],
           }}
           transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-violet-600/10 rounded-full blur-[100px]"
+          className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-violet-600/10 rounded-full blur-[40px]"
         />
         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
       </div>
@@ -213,6 +252,7 @@ export default function Register() {
             {/* Form */}
             <form
               onSubmit={handleSubmit(create_user)}
+              autoComplete="off"
               className="space-y-5"
               noValidate
             >
@@ -221,6 +261,7 @@ export default function Register() {
                 label="Full Name"
                 icon={User}
                 error={errors.fullName?.message}
+                theme="indigo"
               >
                 <input
                   id="fullName"
@@ -238,6 +279,7 @@ export default function Register() {
                 label="Email"
                 icon={Mail}
                 error={errors.email?.message}
+                theme="amber"
               >
                 <input
                   id="email"
@@ -253,6 +295,7 @@ export default function Register() {
                 label="Username"
                 icon={AtSign}
                 error={errors.username?.message}
+                theme="indigo"
               >
                 <input
                   id="username"
@@ -270,10 +313,12 @@ export default function Register() {
                 label="Password"
                 icon={Lock}
                 error={errors.password?.message}
+                theme="amber"
               >
                 <input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
                   placeholder="Min. 8 characters"
                   {...register("password", {
                     required: "Password is required",
@@ -284,6 +329,15 @@ export default function Register() {
                   })}
                   className={inputCls(errors.password)}
                 />
+                {/* Show/hide toggle */}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors p-0.5"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
               </Field>
 
               {/* Divider */}
@@ -298,49 +352,67 @@ export default function Register() {
                 <div className="flex-1 h-px bg-white/10" />
               </motion.div>
 
-              {/* Avatar Upload */}
+              {/* Divider */}
+              <motion.div
+                variants={itemVariants}
+                className="flex items-center gap-3 py-2"
+              >
+                <div className="flex-1 h-px bg-white/10" />
+                <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+                  Profile Images
+                </span>
+                <div className="flex-1 h-px bg-white/10" />
+              </motion.div>
+
+              {/* Avatar Upload (INDIGO THEME) */}
               <motion.div variants={itemVariants} className="group relative">
                 <label
                   htmlFor="avatar"
-                  className="block text-xs font-bold text-slate-400 mb-1.5 transition-colors duration-300 group-focus-within:text-indigo-400 ml-1"
+                  className="block text-xs font-bold text-slate-400 mb-1.5 transition-colors duration-300 group-hover:text-indigo-400 ml-1"
                 >
                   Avatar <span className="text-rose-500">*</span>
                 </label>
-                <label
-                  htmlFor="avatar"
-                  className={`
-                    flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl cursor-pointer
-                    border transition-all duration-300 shadow-inner
-                    ${
-                      errors.avatar
-                        ? "bg-rose-500/10 border-rose-500/50 hover:border-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.15)]"
-                        : "bg-black/20 border-white/10 hover:border-indigo-500 hover:bg-indigo-500/10 hover:shadow-[0_0_20px_rgba(99,102,241,0.15)]"
-                    }
-                  `}
-                >
-                  <span className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0 shadow-lg">
-                    <ImagePlus size={16} className="text-indigo-400" />
-                  </span>
-                  <span className="text-sm font-medium text-slate-400 truncate flex-1 transition-colors group-hover:text-slate-300">
-                    {avatarName || "Select avatar image"}
-                  </span>
-                  <span className="shrink-0 bg-white/5 p-1.5 rounded-lg border border-white/10 group-hover:bg-indigo-500/20 transition-colors">
-                    <Upload
-                      size={14}
-                      className="text-slate-400 group-hover:text-indigo-400"
+
+                {/* ✨ ANIMATED BORDER WRAPPER ✨ */}
+                <div className="relative rounded-2xl p-[1.5px] overflow-hidden">
+                  {/* Rotating Gradient (Indigo) */}
+                  <div className="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,transparent_70%,#6366f1_100%)] opacity-50 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
+                  {/* Static Border Fallback */}
+                  <div className="absolute inset-0 rounded-2xl border border-white/10 group-hover:border-transparent transition-colors pointer-events-none" />
+
+                  {/* The Clickable Label / Dropzone */}
+                  <label
+                    htmlFor="avatar"
+                    className="relative z-10 flex items-center gap-3 w-full px-4 py-3.5 rounded-[15px] cursor-pointer bg-[#0A0A0A] transition-all duration-300 shadow-inner"
+                  >
+                    <span className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0 shadow-lg">
+                      <ImagePlus size={16} className="text-indigo-400" />
+                    </span>
+                    <span className="text-sm font-medium text-slate-400 truncate flex-1 transition-colors group-hover:text-slate-300">
+                      {avatarName || "Select avatar image"}
+                    </span>
+                    <span className="shrink-0 bg-white/5 p-1.5 rounded-lg border border-white/10 group-hover:bg-indigo-500/20 transition-colors">
+                      <Upload
+                        size={14}
+                        className="text-slate-400 group-hover:text-indigo-400"
+                      />
+                    </span>
+                    <input
+                      id="avatar"
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      {...register("avatar", {
+                        required: "Avatar is required",
+                      })}
+                      onChange={(e) =>
+                        setAvatarName(e.target.files?.[0]?.name || "")
+                      }
                     />
-                  </span>
-                  <input
-                    id="avatar"
-                    type="file"
-                    accept="image/*"
-                    className="sr-only"
-                    {...register("avatar", { required: "Avatar is required" })}
-                    onChange={(e) =>
-                      setAvatarName(e.target.files?.[0]?.name || "")
-                    }
-                  />
-                </label>
+                  </label>
+                </div>
+
                 <AnimatePresence>
                   {errors.avatar && (
                     <motion.p
@@ -355,53 +427,59 @@ export default function Register() {
                 </AnimatePresence>
               </motion.div>
 
-              {/* Cover Image Upload */}
+              {/* Cover Image Upload (PURPLE THEME) */}
               <motion.div variants={itemVariants} className="group relative">
                 <label
                   htmlFor="coverImage"
-                  className="block text-xs font-bold text-slate-400 mb-1.5 transition-colors duration-300 group-focus-within:text-purple-400 ml-1"
+                  className="block text-xs font-bold text-slate-400 mb-1.5 transition-colors duration-300 group-hover:text-purple-400 ml-1"
                 >
                   Cover Image{" "}
                   <span className="text-slate-600 font-normal ml-1">
                     (optional)
                   </span>
                 </label>
-                <label
-                  htmlFor="coverImage"
-                  className="
-                    flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl cursor-pointer
-                    border border-white/10 bg-black/20 shadow-inner
-                    hover:border-purple-500 hover:bg-purple-500/10 hover:shadow-[0_0_20px_rgba(168,85,247,0.15)]
-                    transition-all duration-300
-                  "
-                >
-                  <span className="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center shrink-0 shadow-lg">
-                    <Layers size={16} className="text-purple-400" />
-                  </span>
-                  <span className="text-sm font-medium text-slate-400 truncate flex-1 transition-colors group-hover:text-slate-300">
-                    {coverName || "Select cover image"}
-                  </span>
-                  <span className="shrink-0 bg-white/5 p-1.5 rounded-lg border border-white/10 group-hover:bg-purple-500/20 transition-colors">
-                    <Upload
-                      size={14}
-                      className="text-slate-400 group-hover:text-purple-400"
+
+                {/* ✨ ANIMATED BORDER WRAPPER ✨ */}
+                <div className="relative rounded-2xl p-[1.5px] overflow-hidden">
+                  {/* Rotating Gradient (Purple - #a855f7) */}
+                  <div className="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,transparent_70%,#a855f7_100%)] opacity-50 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
+                  {/* Static Border Fallback */}
+                  <div className="absolute inset-0 rounded-2xl border border-white/10 group-hover:border-transparent transition-colors pointer-events-none" />
+
+                  {/* The Clickable Label / Dropzone */}
+                  <label
+                    htmlFor="coverImage"
+                    className="relative z-10 flex items-center gap-3 w-full px-4 py-3.5 rounded-[15px] cursor-pointer bg-[#0A0A0A] transition-all duration-300 shadow-inner"
+                  >
+                    <span className="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center shrink-0 shadow-lg">
+                      <Layers size={16} className="text-purple-400" />
+                    </span>
+                    <span className="text-sm font-medium text-slate-400 truncate flex-1 transition-colors group-hover:text-slate-300">
+                      {coverName || "Select cover image"}
+                    </span>
+                    <span className="shrink-0 bg-white/5 p-1.5 rounded-lg border border-white/10 group-hover:bg-purple-500/20 transition-colors">
+                      <Upload
+                        size={14}
+                        className="text-slate-400 group-hover:text-purple-400"
+                      />
+                    </span>
+                    <input
+                      id="coverImage"
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      {...register("coverImage")}
+                      onChange={(e) =>
+                        setCoverName(e.target.files?.[0]?.name || "")
+                      }
                     />
-                  </span>
-                  <input
-                    id="coverImage"
-                    type="file"
-                    accept="image/*"
-                    className="sr-only"
-                    {...register("coverImage")}
-                    onChange={(e) =>
-                      setCoverName(e.target.files?.[0]?.name || "")
-                    }
-                  />
-                </label>
+                  </label>
+                </div>
               </motion.div>
 
               {/* Submit */}
-              <motion.div variants={itemVariants} className="pt-4">
+              <motion.div variants={itemVariants} className=" pt-4">
                 <motion.button
                   whileHover={{
                     scale: 1.02,

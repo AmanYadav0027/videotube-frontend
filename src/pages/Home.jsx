@@ -20,53 +20,20 @@ function SkeletonCard() {
   return (
     <div className="flex flex-col gap-3">
       <div
-        className="w-full rounded-2xl relative overflow-hidden border border-white/[0.04]"
-        style={{ aspectRatio: "16/9", background: "rgba(255,255,255,0.025)" }}
-      >
-        <motion.div
-          animate={{ x: ["-100%", "200%"] }}
-          transition={{ repeat: Infinity, duration: 1.7, ease: "linear" }}
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.06] to-transparent"
-        />
-      </div>
+        className="w-full rounded-2xl border border-white/[0.04] skeleton-shimmer"
+        style={{ aspectRatio: "16/9" }}
+      />
       <div className="flex gap-3 px-1">
-        <div
-          className="w-9 h-9 rounded-full shrink-0 relative overflow-hidden border border-white/[0.04]"
-          style={{ background: "rgba(255,255,255,0.025)" }}
-        >
-          <motion.div
-            animate={{ x: ["-100%", "200%"] }}
-            transition={{
-              repeat: Infinity,
-              duration: 1.7,
-              ease: "linear",
-              delay: 0.1,
-            }}
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.06] to-transparent"
-          />
-        </div>
+        <div className="w-9 h-9 rounded-full shrink-0 border border-white/[0.04] skeleton-shimmer" />
         <div className="flex-1 flex flex-col gap-2.5 pt-1">
-          {[0.85, 0.55].map((w, i) => (
-            <div
-              key={i}
-              className="h-3 rounded-lg relative overflow-hidden border border-white/[0.04]"
-              style={{
-                width: `${w * 100}%`,
-                background: "rgba(255,255,255,0.025)",
-              }}
-            >
-              <motion.div
-                animate={{ x: ["-100%", "200%"] }}
-                transition={{
-                  repeat: Infinity,
-                  duration: 1.7,
-                  ease: "linear",
-                  delay: 0.15 * (i + 2),
-                }}
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.06] to-transparent"
-              />
-            </div>
-          ))}
+          <div
+            className="h-3 rounded-lg skeleton-shimmer"
+            style={{ width: "85%" }}
+          />
+          <div
+            className="h-3 rounded-lg skeleton-shimmer"
+            style={{ width: "55%" }}
+          />
         </div>
       </div>
     </div>
@@ -212,7 +179,7 @@ export default function Home() {
       {/* Ambient orbs */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <div
-          className="absolute -top-32 left-1/3 w-[600px] h-[500px] opacity-[0.08] mix-blend-screen"
+          className="absolute -top-32 left-1/3 w-[600px] h-[500px] opacity-[0.08] "
           style={{
             background:
               "radial-gradient(ellipse, rgba(99,102,241,1) 0%, transparent 65%)",
@@ -220,7 +187,7 @@ export default function Home() {
           }}
         />
         <div
-          className="absolute bottom-0 right-1/4 w-[400px] h-[400px] opacity-[0.05] mix-blend-screen"
+          className="absolute bottom-0 right-1/4 w-[400px] h-[400px] opacity-[0.05] "
           style={{
             background:
               "radial-gradient(ellipse, rgba(236,72,153,1) 0%, transparent 65%)",
@@ -287,7 +254,6 @@ export default function Home() {
             )}
           </AnimatePresence>
 
-          {/* Sort pills with layoutId sliding indicator */}
           <div
             className="flex items-center gap-0.5 p-1 rounded-xl border border-white/[0.07] shrink-0"
             style={{
@@ -440,28 +406,16 @@ export default function Home() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
-                className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6"
               >
-                <AnimatePresence mode="popLayout">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
                   {videos.map((video, i) => (
-                    <motion.div
-                      key={video._id}
-                      layout
-                      initial={{ opacity: 0, y: 18, scale: 0.96 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{
-                        ...spring,
-                        delay: Math.min(i % 12, 8) * 0.04,
-                      }}
-                    >
-                      <VideoCard video={video} />
-                    </motion.div>
+                    <VideoCard key={video._id} video={video} index={i} />
                   ))}
-                </AnimatePresence>
-                {loadingMore &&
-                  Array.from({ length: 4 }).map((_, i) => (
-                    <SkeletonCard key={`more-${i}`} />
-                  ))}
+                  {loadingMore &&
+                    Array.from({ length: 4 }).map((_, i) => (
+                      <SkeletonCard key={`more-${i}`} />
+                    ))}
+                </div>
               </motion.div>
 
               <div ref={sentinelRef} className="h-8 mt-4" />
