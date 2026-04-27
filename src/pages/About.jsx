@@ -127,7 +127,7 @@ const FeatureCard = memo(function FeatureCard({ icon: Icon, label, desc }) {
 export default function About() {
   const [selectedTech, setSelectedTech] = useState(null);
   useEffect(() => {
-    document.title = "About — MyApp";
+    document.title = "About — VideoTube";
   }, []);
 
   return (
@@ -158,7 +158,7 @@ export default function About() {
             <Play size={22} className="text-white ml-0.5" fill="white" />
           </div>
           <h1 className="text-3xl font-bold text-slate-100 tracking-tight">
-            MyApp
+            VideoTube
           </h1>
           <p className="text-sm text-slate-500 leading-relaxed max-w-md mx-auto">
             A full-stack video sharing platform built with React, Node.js,

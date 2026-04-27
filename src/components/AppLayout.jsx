@@ -7,8 +7,6 @@ import { login, setLoading } from "../store/authSlice";
 import Sidebar from "./Sidebar";
 import Navbar from "./Navbar";
 
-const spring = { type: "spring", stiffness: 400, damping: 30, mass: 0.8 };
-
 function AuthLoader() {
   return (
     <div

@@ -170,7 +170,7 @@ function DashboardSkeleton() {
 }
 
 // ─── Flagged Content Tab ───────────────────────────────────────────────────────
-// FIX: accepts setHasFlagged so parent Dashboard knows whether to show red dot
+//  accepts setHasFlagged so parent Dashboard knows whether to show red dot
 function FlaggedContent({ setHasFlagged }) {
   const [flagged, setFlagged] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -183,7 +183,7 @@ function FlaggedContent({ setHasFlagged }) {
         const res = await axios.get("/api/v2/dashboards/flagged");
         const data = res.data?.data ?? { comments: [], tweets: [] };
         setFlagged(data);
-        // FIX: compute total inside load() where data is available, then lift up
+        //  compute total inside load() where data is available, then lift up
         const total = (data.comments?.length ?? 0) + (data.tweets?.length ?? 0);
         setHasFlagged(total > 0);
       } catch {
@@ -399,8 +399,8 @@ export default function Dashboard() {
   const [deleteId, setDeleteId] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
-  const [activeTab, setActiveTab] = useState("videos"); // "videos" | "flagged"
-  // FIX: hasFlagged lives here so it controls the tab dot correctly
+  const [activeTab, setActiveTab] = useState("videos");
+
   const [hasFlagged, setHasFlagged] = useState(false);
 
   useEffect(() => {
@@ -625,7 +625,7 @@ export default function Dashboard() {
                     )}
                     <tab.icon size={15} />
                     {tab.label}
-                    {/* FIX: only show red dot when there is actually flagged content */}
+
                     {tab.id === "flagged" && hasFlagged && (
                       <span
                         className="w-1.5 h-1.5 rounded-full bg-rose-500"
@@ -820,7 +820,6 @@ export default function Dashboard() {
                       exit={{ opacity: 0, y: -8 }}
                       transition={{ duration: 0.15 }}
                     >
-                      {/* FIX: pass setHasFlagged so FlaggedContent can update parent state */}
                       <FlaggedContent setHasFlagged={setHasFlagged} />
                     </motion.div>
                   )}

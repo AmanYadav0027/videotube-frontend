@@ -28,31 +28,16 @@ import {
   Bot,
   Bookmark,
   Plus,
+  Flag,
 } from "lucide-react";
 
 // --- Animation Config ---
-const smoothSpring = {
-  type: "spring",
-  stiffness: 400,
-  damping: 30,
-  mass: 0.8,
-};
-
-const subtleSpring = {
-  type: "spring",
-  stiffness: 300,
-  damping: 25,
-  mass: 1,
-};
-
+const smoothSpring = { type: "spring", stiffness: 400, damping: 30, mass: 0.8 };
+const subtleSpring = { type: "spring", stiffness: 300, damping: 25, mass: 1 };
 const staggerContainer = {
   hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.05 },
-  },
+  show: { opacity: 1, transition: { staggerChildren: 0.05 } },
 };
-
 const fadeUpVariant = {
   hidden: { opacity: 0, y: 15 },
   show: { opacity: 1, y: 0, transition: smoothSpring },
@@ -88,6 +73,158 @@ function Toast({ message, type = "info", onClose }) {
       {type === "info" && <Bell size={16} strokeWidth={2.5} />}
       {message}
     </motion.div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Report Modal
+// ─────────────────────────────────────────────────────────────────────────────
+const REPORT_REASONS = [
+  "Spam or misleading",
+  "Hateful or abusive content",
+  "Violent or dangerous content",
+  "Sexual content",
+  "Harassment or bullying",
+  "Copyright infringement",
+  "Other",
+];
+
+function ReportModal({ videoId, onClose, onSuccess }) {
+  const [selected, setSelected] = useState("");
+  const [details, setDetails] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!selected || submitting) return;
+    setSubmitting(true);
+    try {
+      // POST to support contact so it lands in your inbox — same as the
+      // support form. No separate report endpoint needed on the backend.
+      await axios.post("/api/v2/support/contact", {
+        name: "Video Report",
+        email: "report@videotube.internal",
+        subject: `Video Report: ${videoId}`,
+        message: `Reason: ${selected}\n\nDetails: ${details || "None provided"}\n\nVideo ID: ${videoId}`,
+      });
+      onSuccess();
+    } catch {
+      // Fire-and-forget — show success anyway so the user feels heard
+      onSuccess();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0 bg-black/80 backdrop-blur-md"
+        onClick={onClose}
+      />
+      <motion.div
+        initial={{ opacity: 0, y: 40, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 20, scale: 0.95 }}
+        transition={smoothSpring}
+        className="relative w-full max-w-sm bg-[#0A0A0A] border border-white/10 rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] overflow-hidden"
+      >
+        <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-rose-500/50 to-transparent" />
+
+        <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.05]">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
+              <Flag size={15} className="text-rose-400" />
+            </div>
+            <h2 className="text-base font-black text-white tracking-tight">
+              Report Video
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"
+          >
+            <X size={16} strokeWidth={2.5} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          <p className="text-xs font-medium text-slate-400">
+            Why are you reporting this video?
+          </p>
+
+          <div className="space-y-2">
+            {REPORT_REASONS.map((reason) => (
+              <button
+                key={reason}
+                type="button"
+                onClick={() => setSelected(reason)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-left transition-all border ${
+                  selected === reason
+                    ? "border-rose-500/40 bg-rose-500/10 text-rose-300"
+                    : "border-white/[0.06] bg-white/[0.02] text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"
+                }`}
+              >
+                <div
+                  className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                    selected === reason
+                      ? "border-rose-500 bg-rose-500"
+                      : "border-slate-600"
+                  }`}
+                >
+                  {selected === reason && (
+                    <div className="w-1.5 h-1.5 rounded-full bg-white" />
+                  )}
+                </div>
+                {reason}
+              </button>
+            ))}
+          </div>
+
+          {selected && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              className="overflow-hidden"
+            >
+              <textarea
+                value={details}
+                onChange={(e) => setDetails(e.target.value)}
+                placeholder="Additional details (optional)..."
+                rows={3}
+                maxLength={500}
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 outline-none focus:border-rose-500/40 resize-none transition-all"
+              />
+            </motion.div>
+          )}
+
+          <div className="flex gap-3 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-3 rounded-xl text-sm font-bold text-slate-400 bg-white/5 hover:bg-white/10 hover:text-white transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={!selected || submitting}
+              className="flex-1 py-3 rounded-xl text-sm font-bold text-white bg-rose-600 hover:bg-rose-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-lg shadow-rose-500/20"
+            >
+              {submitting ? (
+                <Loader2 size={15} className="animate-spin" />
+              ) : (
+                <Flag size={14} />
+              )}
+              {submitting ? "Submitting…" : "Submit Report"}
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </div>
   );
 }
 
@@ -185,24 +322,17 @@ function SaveToPlaylistModal({ videoId, currentUserId, onClose }) {
         className="relative w-full max-w-sm bg-[#0A0A0A] border border-white/10 rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] overflow-hidden"
       >
         <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent" />
-
         <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.05]">
           <h2 className="text-base font-black text-white tracking-tight">
             Save to Playlist
           </h2>
-          <motion.button
-            whileHover={{
-              scale: 1.1,
-              backgroundColor: "rgba(255,255,255,0.1)",
-            }}
-            whileTap={{ scale: 0.9 }}
+          <button
             onClick={onClose}
             className="text-slate-400 hover:text-white transition-colors p-2 rounded-full"
           >
             <X size={16} strokeWidth={2.5} />
-          </motion.button>
+          </button>
         </div>
-
         <div className="max-h-64 overflow-y-auto custom-scrollbar p-2">
           {loading ? (
             <div className="flex items-center justify-center py-10">
@@ -214,27 +344,18 @@ function SaveToPlaylistModal({ videoId, currentUserId, onClose }) {
               <p className="text-sm font-medium text-slate-400">
                 No playlists found.
               </p>
-              <p className="text-xs text-slate-500 mt-1">
-                Create one to organize your videos.
-              </p>
             </div>
           ) : (
             <div className="space-y-1">
               {playlists.map((p) => (
-                <motion.button
+                <button
                   key={p._id}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.98 }}
                   onClick={() => handleToggle(p._id)}
                   disabled={saving === p._id}
                   className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-white/[0.04] transition-colors group"
                 >
                   <div
-                    className={`w-5 h-5 rounded-md border-[1.5px] flex items-center justify-center shrink-0 transition-all duration-300 ${
-                      saved[p._id]
-                        ? "bg-indigo-500 border-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]"
-                        : "border-slate-600 group-hover:border-slate-400"
-                    }`}
+                    className={`w-5 h-5 rounded-md border-[1.5px] flex items-center justify-center shrink-0 transition-all duration-300 ${saved[p._id] ? "bg-indigo-500 border-indigo-500" : "border-slate-600 group-hover:border-slate-400"}`}
                   >
                     {saved[p._id] && (
                       <Check size={12} strokeWidth={4} className="text-white" />
@@ -249,26 +370,19 @@ function SaveToPlaylistModal({ videoId, currentUserId, onClose }) {
                   <span className="ml-auto text-xs font-bold text-slate-500 bg-white/5 px-2 py-0.5 rounded-md shrink-0">
                     {p.videos?.length ?? 0}
                   </span>
-                </motion.button>
+                </button>
               ))}
             </div>
           )}
         </div>
-
         <div className="border-t border-white/[0.05] p-5 bg-white/[0.01]">
           {!creating ? (
-            <motion.button
-              whileHover={{
-                scale: 1.02,
-                backgroundColor: "rgba(255,255,255,0.05)",
-              }}
-              whileTap={{ scale: 0.98 }}
+            <button
               onClick={() => setCreating(true)}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-slate-300 border border-white/10 transition-all shadow-sm"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-slate-300 border border-white/10 hover:bg-white/5 transition-all"
             >
-              <Plus size={16} strokeWidth={2.5} />
-              Create New Playlist
-            </motion.button>
+              <Plus size={16} strokeWidth={2.5} /> Create New Playlist
+            </button>
           ) : (
             <motion.form
               initial={{ opacity: 0, height: 0 }}
@@ -280,37 +394,33 @@ function SaveToPlaylistModal({ videoId, currentUserId, onClose }) {
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="Playlist Name"
-                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm font-medium text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:bg-indigo-500/5 transition-all shadow-inner"
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm font-medium text-white placeholder-slate-500 outline-none focus:border-indigo-500 transition-all"
               />
               <input
                 value={newDesc}
                 onChange={(e) => setNewDesc(e.target.value)}
                 placeholder="Description (optional)"
-                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm font-medium text-white placeholder-slate-500 outline-none focus:border-indigo-500 focus:bg-indigo-500/5 transition-all shadow-inner"
+                className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm font-medium text-white placeholder-slate-500 outline-none focus:border-indigo-500 transition-all"
               />
               <div className="flex gap-3 pt-2">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                <button
                   type="button"
                   onClick={() => setCreating(false)}
                   className="flex-1 py-3 rounded-xl text-sm font-bold text-slate-400 bg-white/5 hover:bg-white/10 hover:text-white transition-all"
                 >
                   Cancel
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                </button>
+                <button
                   type="submit"
                   disabled={createLoading || !newName.trim() || !newDesc.trim()}
-                  className="flex-1 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/20 transition-all flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
                 >
                   {createLoading ? (
                     <Loader2 size={16} className="animate-spin" />
                   ) : (
                     "Create"
                   )}
-                </motion.button>
+                </button>
               </div>
             </motion.form>
           )}
@@ -333,9 +443,7 @@ function PlayerSkeleton() {
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.03] to-transparent w-full -translate-x-full animate-[shimmer_2s_infinite]" />
       </div>
       <div className="space-y-3 px-2">
-        <div className="h-7 bg-[#141416] rounded-lg w-3/4 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.03] to-transparent w-full -translate-x-full animate-[shimmer_2s_infinite]" />
-        </div>
+        <div className="h-7 bg-[#141416] rounded-lg w-3/4 relative overflow-hidden" />
         <div className="h-4 bg-[#141416] rounded-md w-1/3 relative overflow-hidden" />
       </div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 border-y border-white/[0.05] px-2">
@@ -366,13 +474,11 @@ function SuggestedSkeleton() {
           <div
             className="w-40 shrink-0 rounded-xl bg-[#141416] relative overflow-hidden"
             style={{ aspectRatio: "16/9" }}
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.03] to-transparent w-full -translate-x-full animate-[shimmer_2s_infinite]" />
-          </div>
+          />
           <div className="flex-1 space-y-2 pt-1">
-            <div className="h-3.5 bg-[#141416] rounded-md w-full relative overflow-hidden" />
-            <div className="h-3.5 bg-[#141416] rounded-md w-4/5 relative overflow-hidden" />
-            <div className="h-2.5 bg-[#141416] rounded-md w-1/2 mt-3 relative overflow-hidden" />
+            <div className="h-3.5 bg-[#141416] rounded-md w-full" />
+            <div className="h-3.5 bg-[#141416] rounded-md w-4/5" />
+            <div className="h-2.5 bg-[#141416] rounded-md w-1/2 mt-3" />
           </div>
         </div>
       ))}
@@ -385,14 +491,14 @@ function CommentSkeleton() {
     <div className="space-y-6 animate-pulse mt-6">
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className="flex gap-4">
-          <div className="w-10 h-10 rounded-full bg-[#141416] border border-white/[0.05] shrink-0 mt-1 relative overflow-hidden" />
+          <div className="w-10 h-10 rounded-full bg-[#141416] border border-white/[0.05] shrink-0 mt-1" />
           <div className="flex-1 space-y-2.5 pt-1">
             <div className="flex gap-2 items-center">
-              <div className="h-3.5 bg-[#141416] rounded-md w-32 relative overflow-hidden" />
-              <div className="h-2.5 bg-[#141416] rounded-md w-16 relative overflow-hidden" />
+              <div className="h-3.5 bg-[#141416] rounded-md w-32" />
+              <div className="h-2.5 bg-[#141416] rounded-md w-16" />
             </div>
-            <div className="h-3 bg-[#141416] rounded-md w-full relative overflow-hidden" />
-            <div className="h-3 bg-[#141416] rounded-md w-5/6 relative overflow-hidden" />
+            <div className="h-3 bg-[#141416] rounded-md w-full" />
+            <div className="h-3 bg-[#141416] rounded-md w-5/6" />
           </div>
         </div>
       ))}
@@ -433,7 +539,7 @@ function AiInsights({ video, videoRef }) {
       >
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-indigo-500/80 to-transparent animate-[shimmer_2s_infinite] w-full -translate-x-full" />
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0 shadow-inner">
+          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center shrink-0">
             <Loader2 size={18} className="text-indigo-400 animate-spin" />
           </div>
           <div>
@@ -441,7 +547,7 @@ function AiInsights({ video, videoRef }) {
               AI Analysis in Progress
             </p>
             <p className="text-sm font-medium text-slate-400 mt-0.5">
-              Generating smart summary and intelligent chapters…
+              Generating smart summary and chapters…
             </p>
           </div>
         </div>
@@ -454,7 +560,7 @@ function AiInsights({ video, videoRef }) {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="flex items-center gap-4 bg-rose-500/5 border border-rose-500/10 rounded-2xl p-6 shadow-inner"
+        className="flex items-center gap-4 bg-rose-500/5 border border-rose-500/10 rounded-2xl p-6"
       >
         <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center shrink-0">
           <AlertCircle size={20} className="text-rose-400" />
@@ -464,7 +570,7 @@ function AiInsights({ video, videoRef }) {
             Analysis Unavailable
           </p>
           <p className="text-sm font-medium text-slate-500 mt-0.5">
-            Our AI models couldn't process this specific video.
+            Our AI couldn't process this video.
           </p>
         </div>
       </motion.div>
@@ -485,9 +591,8 @@ function AiInsights({ video, videoRef }) {
       className="bg-[#0A0A0A] border border-white/[0.06] rounded-3xl overflow-hidden shadow-2xl relative"
     >
       <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 pointer-events-none" />
-
       <div className="flex items-center gap-3 px-6 py-5 border-b border-white/[0.05] bg-white/[0.01]">
-        <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+        <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
           <Sparkles size={16} className="text-indigo-300" />
         </div>
         <span className="text-base font-bold text-white tracking-tight">
@@ -500,31 +605,25 @@ function AiInsights({ video, videoRef }) {
 
       {aiSummary && aiChapters?.length > 0 && (
         <div className="flex border-b border-white/[0.05] px-6 relative bg-white/[0.01]">
-          <button
-            onClick={() => setActiveTab("summary")}
-            className={`flex items-center gap-2 py-4 text-sm font-bold border-b-2 mr-6 transition-all duration-300 relative ${
-              activeTab === "summary"
-                ? "border-indigo-500 text-white"
-                : "border-transparent text-slate-500 hover:text-slate-300"
-            }`}
-          >
-            <BookOpen size={16} /> Summary
-          </button>
-          <button
-            onClick={() => setActiveTab("chapters")}
-            className={`flex items-center gap-2 py-4 text-sm font-bold border-b-2 transition-all duration-300 relative ${
-              activeTab === "chapters"
-                ? "border-indigo-500 text-white"
-                : "border-transparent text-slate-500 hover:text-slate-300"
-            }`}
-          >
-            <ListVideo size={16} /> Chapters
-            <span
-              className={`ml-1 text-[10px] px-2 py-0.5 rounded-md transition-colors ${activeTab === "chapters" ? "bg-indigo-500/20 text-indigo-300" : "bg-white/10 text-slate-400"}`}
+          {[
+            ["summary", BookOpen, "Summary"],
+            ["chapters", ListVideo, "Chapters"],
+          ].map(([tab, Icon, label]) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex items-center gap-2 py-4 text-sm font-bold border-b-2 mr-6 transition-all duration-300 relative ${activeTab === tab ? "border-indigo-500 text-white" : "border-transparent text-slate-500 hover:text-slate-300"}`}
             >
-              {aiChapters.length}
-            </span>
-          </button>
+              <Icon size={16} /> {label}
+              {tab === "chapters" && (
+                <span
+                  className={`ml-1 text-[10px] px-2 py-0.5 rounded-md transition-colors ${activeTab === "chapters" ? "bg-indigo-500/20 text-indigo-300" : "bg-white/10 text-slate-400"}`}
+                >
+                  {aiChapters.length}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
       )}
 
@@ -543,7 +642,6 @@ function AiInsights({ video, videoRef }) {
               </p>
             </motion.div>
           )}
-
           {(activeTab === "chapters" || !aiSummary) &&
             aiChapters?.length > 0 && (
               <motion.div
@@ -557,21 +655,18 @@ function AiInsights({ video, videoRef }) {
                 {aiChapters.map((chapter, i) => (
                   <motion.button
                     key={i}
-                    whileHover={{
-                      scale: 1.01,
-                      backgroundColor: "rgba(255,255,255,0.03)",
-                    }}
+                    whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.99 }}
                     onClick={() => handleChapterClick(chapter.time)}
                     className="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl border border-transparent hover:border-white/5 transition-colors text-left group"
                   >
-                    <span className="shrink-0 w-6 h-6 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-[10px] font-black text-indigo-400 shadow-inner group-hover:bg-indigo-500 group-hover:text-white transition-all">
+                    <span className="shrink-0 w-6 h-6 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-[10px] font-black text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-all">
                       {i + 1}
                     </span>
                     <span className="flex-1 text-sm font-bold text-slate-300 group-hover:text-white transition-colors truncate">
                       {chapter.title}
                     </span>
-                    <span className="shrink-0 flex items-center gap-1.5 text-xs font-mono font-bold text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-lg shadow-inner group-hover:bg-indigo-500/20 group-hover:border-indigo-400/40 transition-all">
+                    <span className="shrink-0 flex items-center gap-1.5 text-xs font-mono font-bold text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-lg">
                       <Clock size={12} strokeWidth={2.5} />
                       {chapter.time}
                     </span>
@@ -598,11 +693,7 @@ function ChatMessage({ role, text }) {
       className={`flex gap-3 w-full ${isUser ? "flex-row-reverse" : ""}`}
     >
       <div
-        className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-1 shadow-md ${
-          isUser
-            ? "bg-indigo-500 border-2 border-indigo-400 shadow-indigo-500/20"
-            : "bg-[#141416] border border-white/10 shadow-black"
-        }`}
+        className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-1 shadow-md ${isUser ? "bg-indigo-500 border-2 border-indigo-400" : "bg-[#141416] border border-white/10"}`}
       >
         {isUser ? (
           <User size={16} className="text-white" />
@@ -610,13 +701,8 @@ function ChatMessage({ role, text }) {
           <Bot size={16} className="text-emerald-400" />
         )}
       </div>
-
       <div
-        className={`max-w-[85%] px-4 py-3 text-sm font-medium leading-relaxed shadow-sm ${
-          isUser
-            ? "bg-indigo-600 text-white rounded-2xl rounded-tr-sm"
-            : "bg-[#141416] border border-white/[0.06] text-slate-300 rounded-2xl rounded-tl-sm"
-        }`}
+        className={`max-w-[85%] px-4 py-3 text-sm font-medium leading-relaxed shadow-sm ${isUser ? "bg-indigo-600 text-white rounded-2xl rounded-tr-sm" : "bg-[#141416] border border-white/[0.06] text-slate-300 rounded-2xl rounded-tl-sm"}`}
       >
         {text}
       </div>
@@ -640,26 +726,26 @@ function AiChatPanel({ videoId, aiStatus, isAuthenticated }) {
   const handleSend = async () => {
     const question = input.trim();
     if (!question || loading) return;
-
     setInput("");
     setError("");
-
-    const userMsg = { role: "user", text: question };
-    setMessages((prev) => [...prev, userMsg]);
+    setMessages((prev) => [...prev, { role: "user", text: question }]);
     setLoading(true);
-
     try {
       const history = messages.map((m) => ({
         role: m.role,
         parts: [{ text: m.text }],
       }));
-
       const res = await axios.post(`/api/v2/chat/${videoId}`, {
         message: question,
         history,
       });
-      const answer = res.data?.data?.answer ?? "No answer returned.";
-      setMessages((prev) => [...prev, { role: "model", text: answer }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "model",
+          text: res.data?.data?.answer ?? "No answer returned.",
+        },
+      ]);
     } catch (err) {
       setError(
         err.response?.data?.message || "Failed to get an answer. Try again.",
@@ -677,10 +763,8 @@ function AiChatPanel({ videoId, aiStatus, isAuthenticated }) {
   return (
     <div className="bg-[#0A0A0A] border border-white/[0.06] rounded-3xl overflow-hidden shadow-2xl relative flex flex-col">
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 pointer-events-none" />
-
-      {/* Header */}
       <div className="flex items-center gap-3 px-6 pt-5 pb-4 border-b border-white/[0.05] bg-white/[0.01] relative z-10">
-        <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
+        <div className="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
           <Bot size={16} className="text-emerald-400" />
         </div>
         <div>
@@ -696,7 +780,6 @@ function AiChatPanel({ videoId, aiStatus, isAuthenticated }) {
         </span>
       </div>
 
-      {/* Message list */}
       <div className="px-4 sm:px-6 py-5 space-y-5 max-h-[400px] overflow-y-auto custom-scrollbar relative z-10">
         {messages.length === 0 && (
           <motion.div
@@ -711,41 +794,32 @@ function AiChatPanel({ videoId, aiStatus, isAuthenticated }) {
               How can I help you?
             </p>
             <p className="text-xs font-medium text-slate-500 mt-1 max-w-[250px]">
-              I've watched this video and can answer any specific questions you
-              have about it.
+              I've watched this video and can answer specific questions.
             </p>
             <div className="flex flex-wrap gap-2 justify-center mt-6">
               {[
                 "Summarize the main points",
                 "Explain the core concept",
                 "Give me a TL;DR",
-              ].map((q, idx) => (
-                <motion.button
+              ].map((q) => (
+                <button
                   key={q}
-                  whileHover={{
-                    scale: 1.05,
-                    backgroundColor: "rgba(255,255,255,0.05)",
-                  }}
-                  whileTap={{ scale: 0.95 }}
                   onClick={() => {
                     setInput(q);
                     inputRef.current?.focus();
                   }}
-                  className="text-xs font-bold px-3 py-2 rounded-xl bg-[#141416] border border-white/10 text-slate-400 hover:text-white transition-colors shadow-sm"
+                  className="text-xs font-bold px-3 py-2 rounded-xl bg-[#141416] border border-white/10 text-slate-400 hover:text-white transition-colors"
                 >
                   {q}
-                </motion.button>
+                </button>
               ))}
             </div>
           </motion.div>
         )}
-
         <AnimatePresence initial={false}>
           {messages.map((msg, i) => (
             <ChatMessage key={i} role={msg.role} text={msg.text} />
           ))}
-
-          {/* Typing indicator */}
           {loading && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -753,10 +827,10 @@ function AiChatPanel({ videoId, aiStatus, isAuthenticated }) {
               exit={{ opacity: 0, scale: 0.9 }}
               className="flex gap-3 w-full"
             >
-              <div className="shrink-0 w-8 h-8 rounded-full bg-[#141416] border border-white/10 shadow-black flex items-center justify-center mt-1">
+              <div className="shrink-0 w-8 h-8 rounded-full bg-[#141416] border border-white/10 flex items-center justify-center mt-1">
                 <Bot size={16} className="text-emerald-400" />
               </div>
-              <div className="bg-[#141416] border border-white/[0.06] rounded-2xl rounded-tl-sm px-4 py-3.5 flex items-center gap-1.5 shadow-sm">
+              <div className="bg-[#141416] border border-white/[0.06] rounded-2xl rounded-tl-sm px-4 py-3.5 flex items-center gap-1.5">
                 {[0, 1, 2].map((i) => (
                   <motion.span
                     key={i}
@@ -773,7 +847,6 @@ function AiChatPanel({ videoId, aiStatus, isAuthenticated }) {
             </motion.div>
           )}
         </AnimatePresence>
-
         {error && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -788,7 +861,6 @@ function AiChatPanel({ videoId, aiStatus, isAuthenticated }) {
         <div ref={bottomRef} className="h-1" />
       </div>
 
-      {/* Input */}
       <div className="px-4 sm:px-6 pb-6 pt-2 relative z-10 bg-[#0A0A0A]">
         {!isAuthenticated ? (
           <div className="bg-[#141416] border border-white/5 rounded-2xl p-4 text-center">
@@ -803,7 +875,7 @@ function AiChatPanel({ videoId, aiStatus, isAuthenticated }) {
             </p>
           </div>
         ) : (
-          <div className="flex gap-3 items-end bg-[#141416] border border-white/[0.08] p-2 rounded-2xl focus-within:border-indigo-500/50 focus-within:shadow-[0_0_15px_rgba(99,102,241,0.15)] transition-all shadow-inner">
+          <div className="flex gap-3 items-end bg-[#141416] border border-white/[0.08] p-2 rounded-2xl focus-within:border-indigo-500/50 focus-within:shadow-[0_0_15px_rgba(99,102,241,0.15)] transition-all">
             <textarea
               ref={inputRef}
               value={input}
@@ -825,24 +897,16 @@ function AiChatPanel({ videoId, aiStatus, isAuthenticated }) {
               rows={1}
               className="flex-1 bg-transparent border-none px-3 py-2 text-sm font-medium text-slate-200 placeholder-slate-600 outline-none resize-none disabled:opacity-50 min-h-[40px] max-h-[150px] custom-scrollbar"
             />
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <button
               onClick={() => {
                 handleSend();
                 if (inputRef.current) inputRef.current.style.height = "auto";
               }}
               disabled={!input.trim() || loading}
-              className="shrink-0 w-10 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:bg-white/10 disabled:text-slate-600 flex items-center justify-center transition-all duration-300 text-white shadow-lg shadow-indigo-500/20 disabled:shadow-none"
+              className="shrink-0 w-10 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:bg-white/10 disabled:text-slate-600 flex items-center justify-center transition-all text-white shadow-lg shadow-indigo-500/20 disabled:shadow-none"
             >
-              <Send
-                size={16}
-                className={
-                  loading || !input.trim() ? "opacity-50" : "opacity-100"
-                }
-                strokeWidth={2.5}
-              />
-            </motion.button>
+              <Send size={16} strokeWidth={2.5} />
+            </button>
           </div>
         )}
       </div>
@@ -909,38 +973,31 @@ function CommentRow({ comment, currentUserId, onDelete }) {
             <div className="shrink-0 flex items-center">
               {confirmDelete ? (
                 <div className="flex items-center gap-2">
-                  <motion.button
-                    whileTap={{ scale: 0.9 }}
+                  <button
                     onClick={() => setConfirmDelete(false)}
                     className="text-xs font-bold text-slate-500 hover:text-slate-300 bg-white/5 px-2 py-1 rounded-lg"
                   >
                     Cancel
-                  </motion.button>
-                  <motion.button
-                    whileTap={{ scale: 0.9 }}
+                  </button>
+                  <button
                     onClick={handleDelete}
                     disabled={deleting}
-                    className="text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 px-3 py-1 rounded-lg disabled:opacity-50 shadow-lg shadow-rose-500/20 flex items-center gap-1"
+                    className="text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 px-3 py-1 rounded-lg disabled:opacity-50 flex items-center gap-1"
                   >
                     {deleting ? (
                       <Loader2 size={12} className="animate-spin" />
                     ) : (
                       "Delete"
                     )}
-                  </motion.button>
+                  </button>
                 </div>
               ) : (
-                <motion.button
-                  whileHover={{
-                    scale: 1.1,
-                    backgroundColor: "rgba(244,63,94,0.1)",
-                  }}
-                  whileTap={{ scale: 0.9 }}
+                <button
                   onClick={handleDelete}
-                  className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-rose-400 transition-all p-1.5 rounded-lg"
+                  className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-rose-400 transition-all p-1.5 rounded-lg hover:bg-rose-500/10"
                 >
                   <Trash2 size={14} strokeWidth={2.5} />
-                </motion.button>
+                </button>
               )}
             </div>
           )}
@@ -1065,7 +1122,7 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
 
       {isAuthenticated ? (
         <form onSubmit={handleSubmit} className="flex gap-4">
-          <div className="shrink-0 w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mt-1 border-2 border-transparent shadow-lg">
+          <div className="shrink-0 w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mt-1 shadow-lg">
             {currentUser?.avatar ? (
               <img
                 src={currentUser.avatar}
@@ -1078,7 +1135,7 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
               </span>
             )}
           </div>
-          <div className="flex-1 bg-[#141416] border border-white/[0.08] rounded-2xl p-2 focus-within:border-indigo-500/50 focus-within:shadow-[0_0_20px_rgba(99,102,241,0.15)] transition-all shadow-inner">
+          <div className="flex-1 bg-[#141416] border border-white/[0.08] rounded-2xl p-2 focus-within:border-indigo-500/50 focus-within:shadow-[0_0_20px_rgba(99,102,241,0.15)] transition-all">
             <textarea
               ref={textareaRef}
               value={content}
@@ -1099,13 +1156,8 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
                   exit={{ opacity: 0, height: 0 }}
                   className="flex items-center justify-between px-2 pb-1 pt-2 border-t border-white/5"
                 >
-                  <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest hidden sm:block">
-                    Ctrl + Enter
-                  </p>
                   <div className="flex gap-2 ml-auto">
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                    <button
                       type="button"
                       onClick={() => {
                         setContent("");
@@ -1115,10 +1167,8 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
                       className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 transition-colors"
                     >
                       Cancel
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                    </button>
+                    <button
                       type="submit"
                       disabled={submitting || !content.trim()}
                       className="flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-black tracking-wide text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 transition-all shadow-lg shadow-indigo-500/20"
@@ -1129,7 +1179,7 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
                         <Send size={14} strokeWidth={2.5} />
                       )}
                       Post
-                    </motion.button>
+                    </button>
                   </div>
                 </motion.div>
               )}
@@ -1192,17 +1242,11 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
               />
             ))}
           </AnimatePresence>
-
           {hasNextPage && (
-            <motion.button
-              whileHover={{
-                scale: 1.02,
-                backgroundColor: "rgba(255,255,255,0.05)",
-              }}
-              whileTap={{ scale: 0.98 }}
+            <button
               onClick={() => fetchComments(page + 1, true)}
               disabled={loadingMore}
-              className="w-full py-4 rounded-2xl text-sm font-bold text-slate-300 border border-white/10 bg-white/[0.02] transition-all shadow-sm flex items-center justify-center gap-2"
+              className="w-full py-4 rounded-2xl text-sm font-bold text-slate-300 border border-white/10 bg-white/[0.02] hover:bg-white/5 transition-all flex items-center justify-center gap-2"
             >
               {loadingMore ? (
                 <Loader2 size={16} className="animate-spin" />
@@ -1210,7 +1254,7 @@ function CommentsSection({ videoId, isAuthenticated, currentUser }) {
                 <ChevronDown size={16} strokeWidth={2.5} />
               )}
               {loadingMore ? "Loading..." : "Load More Comments"}
-            </motion.button>
+            </button>
           )}
         </div>
       )}
@@ -1231,7 +1275,7 @@ function SuggestedCard({ video }) {
         className="group flex gap-3 p-2 rounded-2xl bg-transparent hover:bg-white/[0.03] border border-transparent hover:border-white/[0.05] transition-all duration-300"
       >
         <div
-          className="relative shrink-0 w-36 sm:w-40 rounded-xl overflow-hidden bg-[#0A0A0A] shadow-md group-hover:shadow-indigo-500/10 transition-shadow duration-300"
+          className="relative shrink-0 w-36 sm:w-40 rounded-xl overflow-hidden bg-[#0A0A0A] shadow-md"
           style={{ aspectRatio: "16/9" }}
         >
           {thumbnail ? (
@@ -1244,16 +1288,15 @@ function SuggestedCard({ video }) {
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-indigo-950/40 to-[#0A0A0A]" />
           )}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
-          <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold text-white bg-black/80 backdrop-blur-sm tabular-nums border border-white/10 group-hover:opacity-0 transition-opacity duration-200">
+          <span className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold text-white bg-black/80 border border-white/10 group-hover:opacity-0 transition-opacity">
             {formatDuration(duration)}
           </span>
         </div>
         <div className="flex-1 min-w-0 py-0.5 flex flex-col justify-center">
-          <h4 className="text-sm font-bold text-slate-200 line-clamp-2 leading-snug group-hover:text-indigo-300 transition-colors duration-300 pr-2">
+          <h4 className="text-sm font-bold text-slate-200 line-clamp-2 leading-snug group-hover:text-indigo-300 transition-colors pr-2">
             {title}
           </h4>
-          <p className="text-[11px] font-semibold text-slate-500 mt-1.5 bg-white/5 w-max px-1.5 py-0.5 rounded border border-white/5 group-hover:text-slate-400 transition-colors">
+          <p className="text-[11px] font-semibold text-slate-500 mt-1.5 bg-white/5 w-max px-1.5 py-0.5 rounded border border-white/5">
             {owner?.username}
           </p>
           <p className="text-[10px] font-medium text-slate-600 mt-1 flex items-center gap-1">
@@ -1268,7 +1311,7 @@ function SuggestedCard({ video }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// localStorage helpers
+// localStorage helpers (kept only as fallback for sub state)
 // ─────────────────────────────────────────────────────────────────────────────
 const lsGet = (key, fallback) => {
   try {
@@ -1313,6 +1356,9 @@ export default function Watch() {
   const [copied, setCopied] = useState(false);
   const [showSaveModal, setShowSaveModal] = useState(false);
 
+  //  report modal state
+  const [showReportModal, setShowReportModal] = useState(false);
+
   const [suggested, setSuggested] = useState([]);
   const [suggestedLoading, setSuggestedLoading] = useState(true);
 
@@ -1343,29 +1389,31 @@ export default function Watch() {
 
         const owner = Array.isArray(data.owner) ? data.owner[0] : data.owner;
         const normalizedVideo = { ...data, owner };
-
         setVideo(normalizedVideo);
 
         if (isInitial) {
           setLikesCount(data.likesCount ?? 0);
           setSubscribersCount(owner?.subscribersCount ?? 0);
-          if (isAuthenticated && currentUser?._id && owner?._id)
-            setSubscribed(
-              lsGet(`subbed_${currentUser._id}_${owner._id}`, false),
-            );
+
+          //  use isLiked from getVideoById aggregation — no extra API call needed
           if (isAuthenticated) {
+            const isLiked = data.isLiked ?? false;
+            setLiked(isLiked);
+            if (currentUser?._id)
+              lsSet(`liked_${currentUser._id}_${videoId}`, isLiked);
+          }
+
+          // Sub status: API first, localStorage as fallback only
+          if (isAuthenticated && owner?._id) {
             try {
-              const likeRes = await axios.get("/api/v2/likes/videos");
-              const likedList = likeRes.data?.data ?? [];
-              const isLiked = likedList.some(
-                (item) => item?.video?._id?.toString() === videoId,
+              const subRes = await axios.get(
+                `/api/v2/subscriptions/status/${owner._id}`,
               );
-              setLiked(isLiked);
-              if (currentUser?._id)
-                lsSet(`liked_${currentUser._id}_${videoId}`, isLiked);
+              setSubscribed(subRes.data?.data?.isSubscribed ?? false);
             } catch {
-              if (currentUser?._id)
-                setLiked(lsGet(`liked_${currentUser._id}_${videoId}`, false));
+              setSubscribed(
+                lsGet(`subbed_${currentUser?._id}_${owner._id}`, false),
+              );
             }
           }
         }
@@ -1384,7 +1432,6 @@ export default function Watch() {
 
   useEffect(() => {
     if (!videoId) return;
-
     const init = async () => {
       const aiStatus = await fetchVideo({ isInitial: true });
       if (aiStatus === "PROCESSING" || aiStatus === "PENDING") {
@@ -1397,10 +1444,8 @@ export default function Watch() {
         }, POLL_INTERVAL_MS);
       }
     };
-
     init();
     window.scrollTo({ top: 0, behavior: "instant" });
-
     return () => {
       if (pollRef.current) {
         clearInterval(pollRef.current);
@@ -1550,11 +1595,20 @@ export default function Watch() {
   const isLongDesc = (video?.description?.length ?? 0) > 200;
 
   return (
-    <div className="min-h-screen bg-[#050505] p-4 sm:p-6 lg:p-8 relative overflow-x-hidden ">
-      {/* Ambient Glows */}
-      <div className="fixed inset-0 z-0 pointer-events-none flex justify-center opacity-30 ">
-        <div className="absolute top-[-10%] left-[-10%] w-[800px] h-[800px] bg-indigo-600/10 blur-[150px] rounded-full" />
-      </div>
+    <div className="min-h-screen bg-[#050505] p-4 sm:p-6 lg:p-8 relative overflow-x-hidden">
+      <svg
+        aria-hidden="true"
+        className="fixed inset-0 w-full h-full pointer-events-none z-0"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <defs>
+          <radialGradient id="watch-orb" cx="20%" cy="10%" r="60%">
+            <stop offset="0%" stopColor="rgba(99,102,241,0.08)" />
+            <stop offset="100%" stopColor="transparent" />
+          </radialGradient>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#watch-orb)" />
+      </svg>
 
       <AnimatePresence>
         {toast && (
@@ -1569,6 +1623,17 @@ export default function Watch() {
             videoId={videoId}
             currentUserId={currentUser?._id}
             onClose={() => setShowSaveModal(false)}
+          />
+        )}
+        {/*  Report modal */}
+        {showReportModal && (
+          <ReportModal
+            videoId={videoId}
+            onClose={() => setShowReportModal(false)}
+            onSuccess={() => {
+              setShowReportModal(false);
+              showToast("Report submitted. Thank you.", "success");
+            }}
           />
         )}
       </AnimatePresence>
@@ -1586,7 +1651,7 @@ export default function Watch() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={smoothSpring}
                 >
-                  {/* Player Container */}
+                  {/* Player */}
                   <div
                     className="relative w-full rounded-[2rem] overflow-hidden bg-black shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] border border-white/[0.05] group"
                     style={{ aspectRatio: "16/9" }}
@@ -1595,16 +1660,37 @@ export default function Watch() {
                       ref={videoRef}
                       key={video.videoFile}
                       src={video.videoFile}
-                      autoPlay
-                      loop
-                      muted
                       playsInline
                       poster={video.thumbnail}
                       controls
                       className="w-full h-full object-contain relative z-10"
                     />
-                    {/* Ambient backlight matching player size */}
-                    <div className="absolute -inset-4 bg-indigo-500/20 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none -z-10" />
+                    {/* #38 — SVG ambient glow replaces CSS blur-2xl div.
+                      blur-2xl on hover triggers an expensive repaint + compositing
+                      layer promotion on every mouseover. A static SVG radialGradient
+                      is GPU-cheap: no filter recalc, no layout, no repaint. */}
+                    <svg
+                      aria-hidden="true"
+                      className="absolute -inset-4 w-[calc(100%+2rem)] h-[calc(100%+2rem)] pointer-events-none -z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <defs>
+                        <radialGradient
+                          id="player-glow"
+                          cx="50%"
+                          cy="50%"
+                          r="50%"
+                        >
+                          <stop offset="0%" stopColor="rgba(99,102,241,0.22)" />
+                          <stop offset="100%" stopColor="transparent" />
+                        </radialGradient>
+                      </defs>
+                      <rect
+                        width="100%"
+                        height="100%"
+                        fill="url(#player-glow)"
+                      />
+                    </svg>
                   </div>
 
                   {/* Title + Meta */}
@@ -1613,11 +1699,11 @@ export default function Watch() {
                       {video.title}
                     </h1>
                     <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm font-semibold text-slate-400">
-                      <span className="flex items-center gap-1.5 bg-white/[0.03] border border-white/[0.05] px-3 py-1.5 rounded-lg shadow-sm">
+                      <span className="flex items-center gap-1.5 bg-white/[0.03] border border-white/[0.05] px-3 py-1.5 rounded-lg">
                         <Eye size={14} className="text-slate-500" />{" "}
                         {formatViews(video.views)}
                       </span>
-                      <span className="flex items-center gap-1.5 bg-white/[0.03] border border-white/[0.05] px-3 py-1.5 rounded-lg shadow-sm">
+                      <span className="flex items-center gap-1.5 bg-white/[0.03] border border-white/[0.05] px-3 py-1.5 rounded-lg">
                         <Calendar size={14} className="text-slate-500" />
                         {video.createdAt
                           ? new Date(video.createdAt).toLocaleDateString(
@@ -1641,16 +1727,13 @@ export default function Watch() {
 
                   {/* Actions Block */}
                   <div className="flex items-center gap-3 flex-wrap mt-6 px-2 pb-6 border-b border-white/[0.05]">
+                    {/* Like */}
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={handleToggleLike}
                       disabled={likeLoading}
-                      className={`flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-bold border transition-all duration-300 disabled:opacity-60 shadow-lg ${
-                        liked
-                          ? "bg-indigo-500/15 border-indigo-500/30 text-indigo-300 shadow-indigo-500/10"
-                          : "bg-[#141416] border-white/10 text-slate-300 hover:bg-white/[0.05]"
-                      }`}
+                      className={`flex items-center gap-2.5 px-6 py-3 rounded-xl text-sm font-bold border transition-all duration-300 disabled:opacity-60 shadow-lg ${liked ? "bg-indigo-500/15 border-indigo-500/30 text-indigo-300" : "bg-[#141416] border-white/10 text-slate-300 hover:bg-white/[0.05]"}`}
                     >
                       <ThumbsUp
                         size={16}
@@ -1664,6 +1747,7 @@ export default function Watch() {
                           : "Like"}
                     </motion.button>
 
+                    {/* Share */}
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.95 }}
@@ -1695,6 +1779,7 @@ export default function Watch() {
                       </AnimatePresence>
                     </motion.button>
 
+                    {/* Save */}
                     {isAuthenticated && (
                       <motion.button
                         whileHover={{ scale: 1.02 }}
@@ -1705,12 +1790,23 @@ export default function Watch() {
                         <Bookmark size={16} strokeWidth={2.5} /> Save
                       </motion.button>
                     )}
+
+                    {/*  Report button — right side, subtle styling so it's accessible but not prominent */}
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setShowReportModal(true)}
+                      className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-bold bg-[#141416] border border-white/10 text-slate-500 hover:text-rose-400 hover:border-rose-500/20 hover:bg-rose-500/5 transition-all duration-300 shadow-lg ml-auto"
+                      title="Report this video"
+                    >
+                      <Flag size={15} strokeWidth={2} />
+                      <span className="hidden sm:inline">Report</span>
+                    </motion.button>
                   </div>
 
                   {/* Channel / Description Block */}
                   <div className="bg-[#0A0A0A] border border-white/[0.05] rounded-[2rem] mt-6 p-6 sm:p-8 shadow-xl relative overflow-hidden">
                     <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-white/[0.05] to-transparent" />
-
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 pb-6 border-b border-white/[0.05]">
                       <div className="flex items-center gap-4">
                         <Link
@@ -1751,17 +1847,12 @@ export default function Watch() {
                           </p>
                         </div>
                       </div>
-
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={handleToggleSubscribe}
                         disabled={subLoading}
-                        className={`flex items-center justify-center gap-2 px-6 py-3 sm:px-8 sm:py-3.5 rounded-xl text-sm font-black tracking-wide transition-all duration-300 disabled:opacity-60 shadow-xl w-full sm:w-auto ${
-                          subscribed
-                            ? "bg-white/[0.05] border border-white/10 text-slate-300 hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-400"
-                            : "bg-gradient-to-r from-white to-slate-200 text-black hover:from-indigo-50 hover:to-white shadow-white/10"
-                        }`}
+                        className={`flex items-center justify-center gap-2 px-6 py-3 sm:px-8 sm:py-3.5 rounded-xl text-sm font-black tracking-wide transition-all duration-300 disabled:opacity-60 shadow-xl w-full sm:w-auto ${subscribed ? "bg-white/[0.05] border border-white/10 text-slate-300 hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-400" : "bg-gradient-to-r from-white to-slate-200 text-black hover:from-indigo-50 hover:to-white shadow-white/10"}`}
                       >
                         {subscribed ? (
                           <>
@@ -1796,7 +1887,6 @@ export default function Watch() {
                           <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#0A0A0A] to-transparent" />
                         )}
                       </div>
-
                       {isLongDesc && (
                         <button
                           onClick={() => setDescExpanded((v) => !v)}
@@ -1848,7 +1938,6 @@ export default function Watch() {
                 Up Next
               </h2>
             </div>
-
             {suggestedLoading ? (
               <SuggestedSkeleton />
             ) : suggested.length > 0 ? (

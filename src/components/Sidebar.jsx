@@ -246,7 +246,7 @@ export default function Sidebar() {
           )}
         </AnimatePresence>
 
-        {/* FIX: ONLY the hamburger button toggles collapsed — nothing else */}
+        {/*  ONLY the hamburger button toggles collapsed — nothing else */}
         <motion.button
           onClick={() => setCollapsed((v) => !v)}
           whileHover={{ scale: 1.08, backgroundColor: "rgba(99,102,241,0.12)" }}

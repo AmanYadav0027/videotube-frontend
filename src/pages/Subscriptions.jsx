@@ -175,7 +175,7 @@ export default function Subscriptions() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    document.title = "Subscriptions — MyApp";
+    document.title = "Subscriptions — VideoTube";
     if (!currentUser?._id) {
       setLoading(false);
       return;

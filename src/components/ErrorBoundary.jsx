@@ -1,5 +1,5 @@
 import { Component } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 const spring = { type: "spring", stiffness: 400, damping: 30, mass: 0.8 };
 
@@ -78,7 +78,7 @@ export default class ErrorBoundary extends Component {
               style={{
                 background:
                   "linear-gradient(145deg, rgba(15,10,20,0.9) 0%, rgba(10,8,18,0.95) 100%)",
-                backdropFilter: "blur(40px)",
+                background: "rgba(10,8,18,0.98)",
                 boxShadow:
                   "0 25px 60px -15px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.04)",
               }}

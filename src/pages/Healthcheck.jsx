@@ -25,7 +25,7 @@ export default function Healthcheck() {
   const [checkedAt, setCheckedAt] = useState(null);
 
   useEffect(() => {
-    document.title = "Healthcheck — MyApp";
+    document.title = "Healthcheck — VideoTube";
   }, []);
 
   const check = async () => {

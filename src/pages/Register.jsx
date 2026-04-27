@@ -352,18 +352,6 @@ export default function Register() {
                 <div className="flex-1 h-px bg-white/10" />
               </motion.div>
 
-              {/* Divider */}
-              <motion.div
-                variants={itemVariants}
-                className="flex items-center gap-3 py-2"
-              >
-                <div className="flex-1 h-px bg-white/10" />
-                <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
-                  Profile Images
-                </span>
-                <div className="flex-1 h-px bg-white/10" />
-              </motion.div>
-
               {/* Avatar Upload (INDIGO THEME) */}
               <motion.div variants={itemVariants} className="group relative">
                 <label

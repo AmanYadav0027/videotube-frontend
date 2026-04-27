@@ -41,7 +41,6 @@ const itemVariants = {
 };
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
-
 function ChannelSkeleton() {
   return (
     <div className="animate-pulse space-y-0 relative z-10">
@@ -82,7 +81,6 @@ function ChannelSkeleton() {
 }
 
 // ─── Video card ───────────────────────────────────────────────────────────────
-
 function ChannelVideoCard({ video }) {
   const { _id, thumbnail, title, duration, views, createdAt } = video;
   return (
@@ -102,7 +100,6 @@ function ChannelVideoCard({ video }) {
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-indigo-950/40 to-[#0A0A0A]" />
           )}
-
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-500" />
           <span className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded-md bg-black/80 backdrop-blur-sm text-white text-[11px] font-bold tabular-nums border border-white/10 group-hover:opacity-0 transition-opacity duration-300">
             {formatDuration(duration)}
@@ -113,7 +110,6 @@ function ChannelVideoCard({ video }) {
             </span>
           </span>
         </div>
-
         <div className="space-y-1 px-0.5 relative z-10">
           <h3
             className="text-sm font-bold text-slate-200 line-clamp-2 leading-snug group-hover:text-indigo-300 transition-colors duration-300"
@@ -133,7 +129,6 @@ function ChannelVideoCard({ video }) {
 }
 
 // ─── Main ────────────────────────────────────────────────────────────────────
-
 export default function Channel() {
   const { username } = useParams();
   const isAuthenticated = useSelector((s) => s.auth.isAuthenticated);
@@ -149,43 +144,47 @@ export default function Channel() {
 
   useEffect(() => {
     if (!username) return;
+    let cancelled = false;
 
     const loadChannel = async () => {
       setLoading(true);
       setError(null);
-      try {
-        const [profileRes, videosRes] = await Promise.all([
-          axios.get(`/api/v2/users/c/${username}`),
-          axios.get("/api/v2/videos", {
-            params: {
-              page: 1,
-              limit: 20,
-              sortBy: "createdAt",
-              sortType: "desc",
-            },
-          }),
-        ]);
 
+      try {
+        const profileRes = await axios.get(`/api/v2/users/c/${username}`);
         const profile = profileRes.data?.data;
+
+        if (cancelled) return;
+
         setChannel(profile);
         setSubCount(profile?.subscribersCount ?? 0);
         setSubscribed(profile?.isSubscribed ?? false);
 
-        const allDocs = videosRes.data?.data?.docs ?? [];
-        setVideos(
-          allDocs.filter(
-            (v) =>
-              v.owner?.username === username || v.owner?._id === profile?._id,
-          ),
-        );
+        const videosRes = await axios.get("/api/v2/videos", {
+          params: {
+            page: 1,
+            limit: 50, // fetch up to 50 so the grid is always complete
+            sortBy: "createdAt",
+            sortType: "desc",
+            userId: profile?._id, // guaranteed to be defined here
+          },
+        });
+
+        if (cancelled) return;
+
+        setVideos(videosRes.data?.data?.docs ?? []);
       } catch (err) {
-        setError(err.response?.data?.message || "Channel not found.");
+        if (!cancelled)
+          setError(err.response?.data?.message || "Channel not found.");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     loadChannel();
+    return () => {
+      cancelled = true;
+    };
   }, [username]);
 
   const handleToggleSubscribe = async () => {
@@ -194,7 +193,6 @@ export default function Channel() {
     const prevSubscribed = subscribed;
     const prevCount = subCount;
 
-    // Optimistic update
     setSubscribed(!prevSubscribed);
     setSubCount((c) => (prevSubscribed ? Math.max(0, c - 1) : c + 1));
     setSubLoading(true);
@@ -203,13 +201,11 @@ export default function Channel() {
       const res = await axios.post(`/api/v2/subscriptions/c/${channel._id}`);
       const isNowSubbed = res.data?.data?.subscribed ?? !prevSubscribed;
 
-      // FIX: only correct if API result differs from our optimistic update
       if (isNowSubbed !== !prevSubscribed) {
         setSubscribed(isNowSubbed);
         setSubCount(isNowSubbed ? prevCount + 1 : Math.max(0, prevCount - 1));
       }
     } catch {
-      // Revert on failure
       setSubscribed(prevSubscribed);
       setSubCount(prevCount);
     } finally {
@@ -230,7 +226,6 @@ export default function Channel() {
   if (error) {
     return (
       <div className="min-h-screen bg-[#0a0a0f] flex items-center justify-center p-4">
-        {/* FIX: wrapped siblings in a proper container div */}
         <motion.div
           initial={{ opacity: 0, y: 20, scale: 0.96 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -258,10 +253,9 @@ export default function Channel() {
   const isOwnChannel = currentUser?.username === username;
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] relative ">
-      {/* Ambient background */}
+    <div className="min-h-screen bg-[#0a0a0f] relative">
       <div className="absolute inset-0 z-0 pointer-events-none flex justify-center overflow-hidden">
-        <div className="absolute top-[-20%] w-[800px] h-[600px] bg-indigo-500/8 blur-[130px] rounded-full  opacity-50" />
+        <div className="absolute top-[-20%] w-[800px] h-[600px] bg-indigo-500/8 blur-[130px] rounded-full opacity-50" />
       </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-10 relative z-10">
@@ -355,13 +349,11 @@ export default function Channel() {
                     <Loader2 size={15} className="animate-spin" />
                   ) : subscribed ? (
                     <>
-                      <BellOff size={15} />
-                      Subscribed
+                      <BellOff size={15} /> Subscribed
                     </>
                   ) : (
                     <>
-                      <Bell size={15} className="fill-black/20" />
-                      Subscribe
+                      <Bell size={15} className="fill-black/20" /> Subscribe
                     </>
                   )}
                 </motion.button>

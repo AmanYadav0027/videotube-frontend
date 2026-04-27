@@ -33,22 +33,11 @@ body {
   text-rendering: optimizeSpeed;
 }
 
-/* 1. Disable hovers to save standard paint cycles */
-.is-scrolling * {
-  pointer-events: none !important;
-}
-
-/* 2. FREEZE expensive background animations while scrolling */
+/* Pause expensive navbar animations while scrolling */
 .is-scrolling .navbar-header::before,
 .is-scrolling .navbar-header::after,
 .is-scrolling .navbar-logo-dot {
   animation-play-state: paused !important;
-}
-
-/* 3. Temporarily turn off backdrop-blur  */
-.is-scrolling [class*="backdrop-blur"] {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
 }
 
 /* ── Selection ───────────────────────────────────────────────────────────── */
@@ -491,9 +480,12 @@ body {
   z-index: 0;
 }
 
-/* Nuclear option — freeze all blur orbs */
-[class*="blur-["] {
-  animation: none !important;
-  transform: none !important;
-  opacity: 1 !important;
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: #e2e8f0 !important;
+  -webkit-box-shadow: 0 0 0 1000px #0a0a0a inset !important;
+  caret-color: #e2e8f0 !important;
+  transition: background-color 5000s ease-in-out 0s;
 }

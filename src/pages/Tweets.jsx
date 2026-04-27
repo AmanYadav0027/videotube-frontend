@@ -14,58 +14,11 @@ import {
   MessageCircle,
   Repeat2,
   Feather,
+  Loader2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const spring = { type: "spring", stiffness: 400, damping: 30, mass: 0.8 };
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Simple virtual list hook — renders only visible items + overscan buffer.
-// Eliminates scroll jank on large feeds by keeping DOM node count low.
-// ─────────────────────────────────────────────────────────────────────────────
-function useVirtualList({ items, itemHeight, overscan = 5 }) {
-  const containerRef = useRef(null);
-  const [range, setRange] = useState({ start: 0, end: 20 });
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const update = () => {
-      const { scrollTop, clientHeight } = container;
-      const start = Math.max(0, Math.floor(scrollTop / itemHeight) - overscan);
-      const end = Math.min(
-        items.length - 1,
-        Math.ceil((scrollTop + clientHeight) / itemHeight) + overscan,
-      );
-      setRange({ start, end });
-    };
-
-    update();
-    container.addEventListener("scroll", update, { passive: true });
-    const ro = new ResizeObserver(update);
-    ro.observe(container);
-    return () => {
-      container.removeEventListener("scroll", update);
-      ro.disconnect();
-    };
-  }, [items.length, itemHeight, overscan]);
-
-  const visibleItems = items.slice(range.start, range.end + 1);
-  const paddingTop = range.start * itemHeight;
-  const paddingBottom = Math.max(
-    0,
-    (items.length - range.end - 1) * itemHeight,
-  );
-
-  return {
-    containerRef,
-    visibleItems,
-    paddingTop,
-    paddingBottom,
-    totalHeight: items.length * itemHeight,
-  };
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Toast
@@ -156,7 +109,7 @@ function TweetSkeleton() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Lazy avatar — shows placeholder until image loads
+// Lazy avatar
 // ─────────────────────────────────────────────────────────────────────────────
 function LazyAvatar({ src, alt, fallback, className }) {
   const [loaded, setLoaded] = useState(false);
@@ -192,13 +145,14 @@ function LazyAvatar({ src, alt, fallback, className }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TweetCard — memoized, no whileHover to avoid per-card JS listeners
+// TweetCard
 // ─────────────────────────────────────────────────────────────────────────────
 const TweetCard = memo(function TweetCard({
   tweet,
-  currentUserId,
+  currentUser,
   onDelete,
   onUpdate,
+  onRetweet,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -206,15 +160,33 @@ const TweetCard = memo(function TweetCard({
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDel, setConfirmDel] = useState(false);
-  // BUG FIX: Normalise initial like state — API might send undefined
   const [isLiked, setIsLiked] = useState(Boolean(tweet.isLiked));
   const [likesCount, setLikesCount] = useState(tweet.likesCount ?? 0);
   const [liking, setLiking] = useState(false);
 
+  // Comments
+  const [showComments, setShowComments] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentInput, setCommentInput] = useState("");
+  const [postingComment, setPostingComment] = useState(false);
+
+  const [showRetweetBox, setShowRetweetBox] = useState(false);
+  const [retweetContent, setRetweetContent] = useState("");
+  const [retweeting, setRetweeting] = useState(false);
+
+  const [retweetCount, setRetweetCount] = useState(tweet.retweetsCount ?? 0);
+  //  track whether current user has retweeted — drives icon colour immediately
+  const [hasRetweeted, setHasRetweeted] = useState(false);
+
   const menuRef = useRef(null);
   const editRef = useRef(null);
+  const commentInputRef = useRef(null);
+
   const owner = tweet.owner ?? {};
   const initial = owner.username?.[0]?.toUpperCase() ?? "?";
+
+  const currentUserId = currentUser?._id;
   const isOwner = currentUserId && owner._id?.toString() === currentUserId;
 
   useEffect(() => {
@@ -236,6 +208,23 @@ const TweetCard = memo(function TweetCard({
     }
   }, [editing]);
 
+  // Load comments when expanded
+  useEffect(() => {
+    if (!showComments) return;
+    const load = async () => {
+      setCommentsLoading(true);
+      try {
+        const res = await axios.get(`/api/v2/comments/t/${tweet._id}`);
+        setComments(res.data?.data?.docs ?? []);
+      } catch {
+        /* silent */
+      } finally {
+        setCommentsLoading(false);
+      }
+    };
+    load();
+  }, [showComments, tweet._id]);
+
   const handleSaveEdit = async () => {
     if (!editContent.trim() || editContent.trim() === tweet.content) {
       setEditing(false);
@@ -249,7 +238,7 @@ const TweetCard = memo(function TweetCard({
       onUpdate(tweet._id, res.data?.data?.content ?? editContent.trim());
       setEditing(false);
     } catch {
-      /* silently handled — toast shown from parent if needed */
+      /* silent */
     } finally {
       setSaving(false);
     }
@@ -274,18 +263,115 @@ const TweetCard = memo(function TweetCard({
   const handleToggleLike = async () => {
     if (!currentUserId || liking) return;
     const wasLiked = isLiked;
-    // Optimistic update
     setIsLiked(!wasLiked);
     setLikesCount((prev) => (wasLiked ? prev - 1 : prev + 1));
     setLiking(true);
     try {
       await axios.post(`/api/v2/likes/toggle/t/${tweet._id}`);
     } catch {
-      // BUG FIX: Rollback was inverted in original — now correctly reverses optimistic change
       setIsLiked(wasLiked);
       setLikesCount((prev) => (wasLiked ? prev + 1 : prev - 1));
     } finally {
       setLiking(false);
+    }
+  };
+
+  const handlePostComment = async (e) => {
+    e.preventDefault();
+    if (!commentInput.trim() || postingComment) return;
+    setPostingComment(true);
+
+    //  always build owner from currentUser — guaranteed to have username+avatar.
+    // The POST /comments endpoint returns an unpopulated doc where owner is just
+    // an ObjectId string, so real.owner?.username is always undefined. If we let
+    // real.owner overwrite the optimistic owner the @username disappears until
+    // the user refreshes. We only fall back to real.owner when it is a full object.
+    const optimisticOwner = {
+      _id: currentUserId,
+      username: currentUser?.username,
+      avatar: currentUser?.avatar,
+    };
+
+    const optimistic = {
+      _id: `temp_${Date.now()}`,
+      content: commentInput.trim(),
+      createdAt: new Date().toISOString(),
+      owner: optimisticOwner,
+    };
+    setComments((prev) => [optimistic, ...prev]);
+    setCommentInput("");
+    try {
+      const res = await axios.post(`/api/v2/comments/t/${tweet._id}`, {
+        content: optimistic.content,
+      });
+      const real = res.data?.data ?? {};
+      setComments((prev) =>
+        prev.map((c) =>
+          c._id === optimistic._id
+            ? // Keep optimisticOwner unless the API returned a fully populated owner object
+              {
+                ...real,
+                owner: real.owner?.username ? real.owner : optimisticOwner,
+              }
+            : c,
+        ),
+      );
+    } catch {
+      setComments((prev) => prev.filter((c) => c._id !== optimistic._id));
+      setCommentInput(optimistic.content);
+    } finally {
+      setPostingComment(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    const prev = [...comments];
+    setComments((c) => c.filter((x) => x._id !== commentId));
+    try {
+      await axios.delete(`/api/v2/comments/c/${commentId}`);
+    } catch {
+      setComments(prev);
+    }
+  };
+
+  // use the real toggleRetweet endpoint that exists on the backend
+  // (POST /api/v2/tweets/toggle-retweet/:tweetId per tweet.routes.js).
+  // The previous attempt called /tweets/:id/retweet which doesn't exist —
+  // every call silently 404'd so retweetCount and icon state never updated
+  // without a hard refresh. Now we optimistically flip state and close the
+  // box immediately, then sync from the API response if available.
+  const handleRetweet = async (e) => {
+    e.preventDefault();
+    if (!retweetContent.trim() || retweeting) return;
+    setRetweeting(true);
+
+    // Optimistic update — flip immediately so UI responds without waiting
+    const wasRetweeted = hasRetweeted;
+    setHasRetweeted(true);
+    setRetweetCount((c) => c + 1);
+
+    try {
+      const res = await axios.post(
+        `/api/v2/tweets/toggle-retweet/${tweet._id}`,
+        { content: retweetContent.trim() },
+      );
+      const data = res.data?.data;
+      // Sync server truth if returned
+      if (typeof data?.retweeted === "boolean") {
+        setHasRetweeted(data.retweeted);
+        if (!data.retweeted) setRetweetCount((c) => Math.max(0, c - 1));
+      }
+      if (data?.tweet) {
+        onRetweet?.(data.tweet);
+      }
+      setRetweetContent("");
+      setShowRetweetBox(false);
+    } catch {
+      // Revert optimistic update on failure
+      setHasRetweeted(wasRetweeted);
+      setRetweetCount((c) => Math.max(0, c - 1));
+    } finally {
+      setRetweeting(false);
     }
   };
 
@@ -295,7 +381,7 @@ const TweetCard = memo(function TweetCard({
       initial={{ opacity: 0, y: 16, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={spring}
-      className="group relative rounded-2xl p-5 border transition-all duration-300 overflow-hidden hover:-translate-y-0.5"
+      className="group relative rounded-2xl border transition-all duration-300 overflow-hidden"
       style={{
         background: "rgba(10,10,15,0.85)",
         backdropFilter: "blur(20px)",
@@ -303,6 +389,7 @@ const TweetCard = memo(function TweetCard({
         boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
       }}
     >
+      {/* Top hover line */}
       <div
         className="absolute top-0 left-6 right-6 h-px opacity-0 group-hover:opacity-100 transition-opacity duration-500"
         style={{
@@ -311,233 +398,397 @@ const TweetCard = memo(function TweetCard({
         }}
       />
 
-      <div className="flex gap-4">
-        <LazyAvatar
-          src={owner.avatar}
-          alt={owner.username}
-          fallback={initial}
-          className="shrink-0 w-10 h-10 rounded-full shadow-lg transition-transform duration-200 hover:scale-105"
-        />
+      <div className="p-5">
+        <div className="flex gap-4">
+          <LazyAvatar
+            src={owner.avatar}
+            alt={owner.username}
+            fallback={initial}
+            className="shrink-0 w-10 h-10 rounded-full shadow-lg"
+          />
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <div className="flex items-center gap-2 flex-wrap min-w-0">
-              <span className="text-sm font-bold text-slate-200 truncate group-hover:text-white transition-colors">
-                {owner.fullName || owner.username || "Unknown"}
-              </span>
-              {owner.username && (
-                <span className="text-xs font-medium text-slate-600">
-                  @{owner.username}
+          <div className="flex-1 min-w-0">
+            {/* Header */}
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-2 flex-wrap min-w-0">
+                <span className="text-sm font-bold text-slate-200 truncate group-hover:text-white transition-colors">
+                  {owner.fullName || owner.username || "Unknown"}
                 </span>
+
+                {owner.username && (
+                  <span className="text-xs font-medium text-slate-600">
+                    @{owner.username}
+                  </span>
+                )}
+                <span className="text-[10px] text-slate-700">·</span>
+                <span className="text-xs font-medium text-slate-600">
+                  {timeAgo(tweet.createdAt)}
+                </span>
+              </div>
+
+              {isOwner && (
+                <div ref={menuRef} className="relative shrink-0">
+                  <button
+                    onClick={() => {
+                      setMenuOpen((v) => !v);
+                      setConfirmDel(false);
+                    }}
+                    className="p-1.5 rounded-lg text-slate-600 hover:text-slate-200 hover:bg-white/[0.08] transition-all outline-none"
+                  >
+                    <MoreHorizontal size={16} />
+                  </button>
+                  <AnimatePresence initial={false}>
+                    {menuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9, y: -8 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: -8 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 top-8 z-20 w-36 rounded-xl overflow-hidden shadow-2xl border border-white/10"
+                        style={{
+                          background: "rgba(15,15,22,0.97)",
+                          backdropFilter: "blur(20px)",
+                        }}
+                      >
+                        <button
+                          onClick={() => {
+                            setEditing(true);
+                            setMenuOpen(false);
+                          }}
+                          className="flex items-center gap-2.5 w-full px-4 py-3 text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white transition-colors"
+                        >
+                          <Edit3 size={14} /> Edit
+                        </button>
+                        <button
+                          onClick={handleDelete}
+                          className="flex items-center gap-2.5 w-full px-4 py-3 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors"
+                        >
+                          <Trash2 size={14} /> Delete
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               )}
-              <span className="text-[10px] text-slate-700">·</span>
-              <span className="text-xs font-medium text-slate-600">
-                {timeAgo(tweet.createdAt)}
-              </span>
             </div>
 
-            {isOwner && (
-              <div ref={menuRef} className="relative shrink-0">
-                <button
-                  onClick={() => {
-                    setMenuOpen((v) => !v);
-                    setConfirmDel(false);
+            {/* Content / Edit */}
+            {editing ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="mt-1 space-y-3"
+              >
+                <textarea
+                  ref={editRef}
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  onKeyDown={(e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === "Enter")
+                      handleSaveEdit();
+                    if (e.key === "Escape") {
+                      setEditing(false);
+                      setEditContent(tweet.content);
+                    }
                   }}
-                  className="p-1.5 rounded-lg text-slate-600 hover:text-slate-200 hover:bg-white/[0.08] transition-all outline-none"
-                >
-                  <MoreHorizontal size={16} />
-                </button>
-                <AnimatePresence initial={false}>
-                  {menuOpen && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9, y: -8 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.9, y: -8 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-8 z-20 w-36 rounded-xl overflow-hidden shadow-2xl border border-white/10"
-                      style={{
-                        background: "rgba(15,15,22,0.97)",
-                        backdropFilter: "blur(20px)",
-                      }}
+                  rows={3}
+                  className="w-full rounded-xl px-4 py-3 text-sm text-slate-200 outline-none resize-none transition-all border"
+                  style={{
+                    background: "rgba(99,102,241,0.06)",
+                    borderColor: "rgba(99,102,241,0.3)",
+                  }}
+                />
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    onClick={() => {
+                      setEditing(false);
+                      setEditContent(tweet.content);
+                    }}
+                    className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-200 hover:bg-white/[0.06] transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveEdit}
+                    disabled={saving || !editContent.trim()}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-50"
+                    style={{
+                      background: "linear-gradient(135deg, #6366f1, #7c3aed)",
+                      boxShadow: "0 4px 12px rgba(99,102,241,0.3)",
+                    }}
+                  >
+                    <Check size={14} /> {saving ? "Saving…" : "Save"}
+                  </button>
+                </div>
+              </motion.div>
+            ) : (
+              <>
+                <p className="text-[13px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words mb-3">
+                  {tweet.content}
+                </p>
+
+                {/* Action bar */}
+                <div className="flex items-center gap-5">
+                  {/* Comment */}
+                  <button
+                    onClick={() => setShowComments((v) => !v)}
+                    className={`flex items-center gap-1.5 text-xs transition-colors duration-200 group/btn ${showComments ? "text-indigo-400" : "text-slate-600 hover:text-indigo-400"}`}
+                  >
+                    <div className="p-1.5 rounded-full group-hover/btn:bg-indigo-500/10 transition-colors">
+                      <MessageCircle size={16} />
+                    </div>
+                    <span className="font-semibold tabular-nums">
+                      {comments.length > 0 ? comments.length : ""}
+                    </span>
+                  </button>
+
+                  {/* Retweet —  colour driven by hasRetweeted for instant feedback */}
+                  <button
+                    onClick={() =>
+                      currentUserId && setShowRetweetBox((v) => !v)
+                    }
+                    className={`flex items-center gap-1.5 text-xs transition-colors duration-200 group/btn ${hasRetweeted || showRetweetBox ? "text-emerald-400" : "text-slate-600 hover:text-emerald-400"}`}
+                  >
+                    <div className="p-1.5 rounded-full group-hover/btn:bg-emerald-500/10 transition-colors">
+                      <Repeat2 size={17} />
+                    </div>
+                    <span className="font-semibold tabular-nums">
+                      {retweetCount > 0 ? retweetCount : ""}
+                    </span>
+                  </button>
+
+                  {/* Like */}
+                  <motion.button
+                    whileTap={{ scale: 0.85 }}
+                    onClick={handleToggleLike}
+                    disabled={!currentUserId || liking}
+                    className={`flex items-center gap-1.5 text-xs transition-colors duration-200 group/btn ${isLiked ? "text-rose-500" : "text-slate-600 hover:text-rose-400"} ${!currentUserId ? "opacity-50 cursor-not-allowed" : ""}`}
+                  >
+                    <div
+                      className={`p-1.5 rounded-full transition-colors ${isLiked ? "bg-rose-500/12" : "group-hover/btn:bg-rose-500/10"}`}
                     >
-                      <button
-                        onClick={() => {
-                          setEditing(true);
-                          setMenuOpen(false);
-                        }}
-                        className="flex items-center gap-2.5 w-full px-4 py-3 text-xs font-semibold text-slate-300 hover:bg-white/[0.06] hover:text-white transition-colors"
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill={isLiked ? "currentColor" : "none"}
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className={`transition-all duration-300 ${isLiked ? "scale-110" : "scale-100 group-hover/btn:scale-110"}`}
                       >
-                        <Edit3 size={14} /> Edit
-                      </button>
-                      <button
-                        onClick={handleDelete}
-                        className="flex items-center gap-2.5 w-full px-4 py-3 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors"
-                      >
-                        <Trash2 size={14} /> Delete
-                      </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
+                      </svg>
+                    </div>
+                    <span
+                      className={`font-semibold tabular-nums ${isLiked ? "text-rose-500" : ""}`}
+                    >
+                      {likesCount > 0 ? likesCount : ""}
+                    </span>
+                  </motion.button>
+                </div>
+              </>
+            )}
+
+            {/* Confirm delete */}
+            {confirmDel && !menuOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={spring}
+                className="mt-4 flex items-center gap-3 px-4 py-3 rounded-xl border border-rose-500/20"
+                style={{ background: "rgba(244,63,94,0.07)" }}
+              >
+                <p className="text-xs font-medium text-rose-400 flex-1">
+                  Permanently delete this post?
+                </p>
+                <button
+                  onClick={() => setConfirmDel(false)}
+                  className="text-xs font-bold text-slate-500 hover:text-slate-300 px-2 py-1 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="text-xs font-bold text-white px-3 py-1.5 rounded-lg transition-all disabled:opacity-50 active:scale-95"
+                  style={{
+                    background: "#e11d48",
+                    boxShadow: "0 4px 12px rgba(225,29,72,0.3)",
+                  }}
+                >
+                  {deleting ? "Deleting…" : "Delete"}
+                </button>
+              </motion.div>
             )}
           </div>
+        </div>
+      </div>
 
-          {editing ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="mt-1 space-y-3"
-            >
+      {/* ── Retweet box ── */}
+      <AnimatePresence>
+        {showRetweetBox && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden border-t border-white/[0.05]"
+          >
+            <form onSubmit={handleRetweet} className="p-4 space-y-3">
+              {/* Original tweet preview */}
+              <div
+                className="text-xs text-slate-500 px-3 py-2 rounded-xl border border-white/[0.06] line-clamp-2"
+                style={{ background: "rgba(255,255,255,0.02)" }}
+              >
+                ↩ <span className="text-slate-400">@{owner.username}:</span>{" "}
+                {tweet.content.slice(0, 100)}
+                {tweet.content.length > 100 ? "…" : ""}
+              </div>
               <textarea
-                ref={editRef}
-                value={editContent}
-                onChange={(e) => setEditContent(e.target.value)}
-                onKeyDown={(e) => {
-                  if ((e.ctrlKey || e.metaKey) && e.key === "Enter")
-                    handleSaveEdit();
-                  if (e.key === "Escape") {
-                    setEditing(false);
-                    setEditContent(tweet.content);
-                  }
-                }}
-                rows={3}
-                className="w-full rounded-xl px-4 py-3 text-sm text-slate-200 outline-none resize-none transition-all border"
+                value={retweetContent}
+                onChange={(e) => setRetweetContent(e.target.value)}
+                placeholder="Add your thoughts..."
+                rows={2}
+                maxLength={400}
+                className="w-full rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-600 outline-none resize-none border"
                 style={{
-                  background: "rgba(99,102,241,0.06)",
-                  borderColor: "rgba(99,102,241,0.3)",
+                  background: "rgba(16,185,129,0.04)",
+                  borderColor: "rgba(16,185,129,0.2)",
                 }}
               />
               <div className="flex items-center justify-end gap-2">
                 <button
+                  type="button"
                   onClick={() => {
-                    setEditing(false);
-                    setEditContent(tweet.content);
+                    setShowRetweetBox(false);
+                    setRetweetContent("");
                   }}
                   className="px-4 py-2 rounded-xl text-xs font-bold text-slate-400 hover:text-slate-200 hover:bg-white/[0.06] transition-colors"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={handleSaveEdit}
-                  disabled={saving || !editContent.trim()}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition-all disabled:opacity-50"
+                  type="submit"
+                  disabled={retweeting || !retweetContent.trim()}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white disabled:opacity-50 transition-all"
                   style={{
-                    background: "linear-gradient(135deg, #6366f1, #7c3aed)",
-                    boxShadow: "0 4px 12px rgba(99,102,241,0.3)",
+                    background: "linear-gradient(135deg, #10b981, #059669)",
+                    boxShadow: "0 4px 12px rgba(16,185,129,0.3)",
                   }}
                 >
-                  <Check size={14} /> {saving ? "Saving…" : "Save"}
+                  {retweeting ? (
+                    <Loader2 size={13} className="animate-spin" />
+                  ) : (
+                    <Repeat2 size={13} />
+                  )}
+                  {retweeting ? "Posting…" : "Retweet"}
                 </button>
               </div>
-            </motion.div>
-          ) : (
-            <>
-              <p className="text-[13px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words mb-3">
-                {tweet.content}
-              </p>
-              <div className="flex items-center gap-5">
-                <button
-                  onClick={() => console.log("Open comment modal")}
-                  className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-indigo-400 transition-colors duration-200 group/btn"
-                >
-                  <div className="p-1.5 rounded-full group-hover/btn:bg-indigo-500/10 transition-colors">
-                    <MessageCircle
-                      size={16}
-                      className="group-hover/btn:-rotate-12 group-hover/btn:scale-110 transition-transform duration-300"
-                    />
-                  </div>
-                  <span className="font-semibold tabular-nums">
-                    {tweet.commentsCount > 0 ? tweet.commentsCount : ""}
-                  </span>
-                </button>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-                <button
-                  onClick={() => console.log("Trigger retweet")}
-                  className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-emerald-400 transition-colors duration-200 group/btn"
-                >
-                  <div className="p-1.5 rounded-full group-hover/btn:bg-emerald-500/10 transition-colors">
-                    <Repeat2
-                      size={17}
-                      className="group-hover/btn:rotate-180 group-hover/btn:scale-110 transition-transform duration-300"
-                    />
-                  </div>
-                  <span className="font-semibold tabular-nums">
-                    {tweet.retweetsCount > 0 ? tweet.retweetsCount : ""}
-                  </span>
-                </button>
-
-                <motion.button
-                  whileTap={{ scale: 0.85 }}
-                  onClick={handleToggleLike}
-                  disabled={!currentUserId || liking}
-                  className={`flex items-center gap-1.5 text-xs transition-colors duration-200 group/btn ${isLiked ? "text-rose-500" : "text-slate-600 hover:text-rose-400"} ${!currentUserId ? "opacity-50 cursor-not-allowed" : ""}`}
-                >
-                  <div
-                    className={`p-1.5 rounded-full transition-colors ${isLiked ? "bg-rose-500/12" : "group-hover/btn:bg-rose-500/10"}`}
+      {/* ── Comments section ── */}
+      <AnimatePresence>
+        {showComments && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden border-t border-white/[0.05]"
+          >
+            <div className="p-4 space-y-3">
+              {currentUserId && (
+                <form onSubmit={handlePostComment} className="flex gap-2">
+                  <input
+                    ref={commentInputRef}
+                    value={commentInput}
+                    onChange={(e) => setCommentInput(e.target.value)}
+                    placeholder="Write a reply..."
+                    maxLength={500}
+                    className="flex-1 rounded-xl px-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 outline-none border"
+                    style={{
+                      background: "rgba(255,255,255,0.03)",
+                      borderColor: "rgba(255,255,255,0.08)",
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = "rgba(99,102,241,0.4)";
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = "rgba(255,255,255,0.08)";
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    disabled={postingComment || !commentInput.trim()}
+                    className="px-4 py-2.5 rounded-xl text-xs font-bold text-white disabled:opacity-50 transition-all flex items-center gap-1.5"
+                    style={{
+                      background: "linear-gradient(135deg, #6366f1, #7c3aed)",
+                    }}
                   >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill={isLiked ? "currentColor" : "none"}
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className={`transition-all duration-300 ${isLiked ? "scale-110" : "scale-100 group-hover/btn:scale-110"}`}
-                    >
-                      <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-                    </svg>
-                  </div>
-                  <span
-                    className={`font-semibold tabular-nums ${isLiked ? "text-rose-500" : ""}`}
-                  >
-                    {likesCount > 0 ? likesCount : ""}
-                  </span>
-                </motion.button>
-              </div>
-            </>
-          )}
+                    {postingComment ? (
+                      <Loader2 size={13} className="animate-spin" />
+                    ) : (
+                      <Send size={13} />
+                    )}
+                  </button>
+                </form>
+              )}
 
-          {confirmDel && !menuOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={spring}
-              className="mt-4 flex items-center gap-3 px-4 py-3 rounded-xl border border-rose-500/20"
-              style={{ background: "rgba(244,63,94,0.07)" }}
-            >
-              <p className="text-xs font-medium text-rose-400 flex-1">
-                Permanently delete this post?
-              </p>
-              <button
-                onClick={() => setConfirmDel(false)}
-                className="text-xs font-bold text-slate-500 hover:text-slate-300 px-2 py-1 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="text-xs font-bold text-white px-3 py-1.5 rounded-lg transition-all disabled:opacity-50 active:scale-95"
-                style={{
-                  background: "#e11d48",
-                  boxShadow: "0 4px 12px rgba(225,29,72,0.3)",
-                }}
-              >
-                {deleting ? "Deleting…" : "Delete"}
-              </button>
-            </motion.div>
-          )}
-        </div>
-      </div>
+              {commentsLoading ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 size={18} className="animate-spin text-slate-600" />
+                </div>
+              ) : comments.length === 0 ? (
+                <p className="text-xs text-slate-600 text-center py-3">
+                  No replies yet. Be the first!
+                </p>
+              ) : (
+                <div className="space-y-3 max-h-60 overflow-y-auto">
+                  {comments.map((c) => {
+                    const canDelete =
+                      currentUserId &&
+                      (c.owner?._id === currentUserId || isOwner);
+                    return (
+                      <div key={c._id} className="flex gap-3 group/comment">
+                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shrink-0 text-[10px] font-bold text-white shadow-sm">
+                          {c.owner?.username?.[0]?.toUpperCase() ?? "?"}
+                        </div>
+                        <div
+                          className="flex-1 flex justify-between items-start px-3 py-2 rounded-xl text-xs text-slate-300 border border-white/[0.05]"
+                          style={{ background: "rgba(255,255,255,0.02)" }}
+                        >
+                          <div className="pr-2 break-words">
+                            <span className="font-bold text-slate-400 mr-2">
+                              @{c.owner?.username}
+                            </span>
+                            {c.content}
+                          </div>
+                          {canDelete && (
+                            <button
+                              onClick={() => handleDeleteComment(c._id)}
+                              className="opacity-0 group-hover/comment:opacity-100 p-1 shrink-0 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-md transition-all duration-200"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 });
-
-// Estimated card height in px — used by virtual list.
-// Cards are roughly 120px tall; overscan handles variance gracefully.
-const ITEM_HEIGHT = 140;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Tweets page
@@ -553,8 +804,6 @@ export default function Tweets() {
   const [toast, setToast] = useState(null);
 
   const textareaRef = useRef(null);
-
-  // PERF FIX: Stabilise showToast with a ref so useEffect fetch doesn't re-run on re-render
   const showToastRef = useRef(null);
   showToastRef.current = (message, type = "info") =>
     setToast({ message, type });
@@ -564,10 +813,10 @@ export default function Tweets() {
   );
 
   useEffect(() => {
-    if (!currentUser?._id) {
-      setLoading(false);
-      return;
-    }
+    document.title = "Community — VideoTube";
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
     const fetchTweets = async () => {
       setLoading(true);
@@ -585,7 +834,7 @@ export default function Tweets() {
     return () => {
       cancelled = true;
     };
-  }, [currentUser?._id]); // showToast deliberately omitted — stabilised via ref
+  }, []); // fetch once on mount — feed is public
 
   const handlePost = async (e) => {
     e.preventDefault();
@@ -595,6 +844,9 @@ export default function Tweets() {
       _id: `temp_${Date.now()}`,
       content: content.trim(),
       createdAt: new Date().toISOString(),
+      isLiked: false,
+      likesCount: 0,
+      retweetsCount: 0,
       owner: {
         _id: currentUser?._id,
         username: currentUser?.username,
@@ -613,8 +865,7 @@ export default function Tweets() {
         content: optimistic.content,
       });
       const real = res.data?.data;
-      // BUG FIX: Spread real first so server fields win, then overlay owner from optimistic
-      // to avoid a flicker if the API returns a partial owner object.
+      // Server fields win, but keep optimistic owner if API returns partial
       setTweets((prev) =>
         prev.map((t) =>
           t._id === optimistic._id
@@ -652,33 +903,16 @@ export default function Tweets() {
     [showToast],
   );
 
+  const handleRetweet = useCallback((newTweet) => {
+    if (!newTweet) return;
+    setTweets((prev) => [newTweet, ...prev]);
+  }, []);
+
   const handleTextareaChange = (e) => {
     setContent(e.target.value);
     e.target.style.height = "auto";
     e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`;
   };
-
-  // PERF: Virtual list — only renders the items currently visible in the feed container
-  const feedContainerRef = useRef(null);
-  const {
-    containerRef: virtualRef,
-    visibleItems,
-    paddingTop,
-    paddingBottom,
-  } = useVirtualList({
-    items: tweets,
-    itemHeight: ITEM_HEIGHT,
-    overscan: 5,
-  });
-
-  // Merge the two refs into one callback ref
-  const feedRef = useCallback(
-    (el) => {
-      feedContainerRef.current = el;
-      virtualRef.current = el;
-    },
-    [virtualRef],
-  );
 
   return (
     <div
@@ -715,12 +949,11 @@ export default function Tweets() {
       </div>
 
       <div className="relative z-10 max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-        {/* Header — viewport once:true so the IntersectionObserver is cleaned up after trigger */}
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -12, filter: "blur(6px)" }}
           animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={spring}
-          viewport={{ once: true }}
           className="flex items-center gap-4"
         >
           <div
@@ -737,7 +970,7 @@ export default function Tweets() {
               Community
             </h1>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
-              Your posts and updates
+              Posts and updates
             </p>
           </div>
         </motion.div>
@@ -784,7 +1017,6 @@ export default function Tweets() {
                     maxLength={500}
                     className="w-full bg-transparent text-[15px] text-slate-200 placeholder-slate-600 outline-none resize-none leading-relaxed mt-1"
                   />
-
                   <AnimatePresence initial={false}>
                     {content.length > 0 && (
                       <motion.div
@@ -877,7 +1109,7 @@ export default function Tweets() {
             }}
           >
             <p className="text-sm font-medium text-slate-400">
-              Sign in to post to your community
+              Sign in to post to the community
             </p>
           </motion.div>
         )}
@@ -909,31 +1141,19 @@ export default function Tweets() {
             </div>
           </motion.div>
         ) : (
-          // PERF: Virtual scrolling container — fixed height, overflow scroll
-          // Only DOM-renders ITEM_HEIGHT-sized windows of cards at a time
-          <div
-            ref={feedRef}
-            className="overflow-y-auto"
-            style={{
-              maxHeight: "70vh",
-              scrollbarWidth: "thin",
-              scrollbarColor: "rgba(99,102,241,0.3) transparent",
-            }}
-          >
-            <div style={{ paddingTop, paddingBottom }}>
-              <AnimatePresence mode="popLayout" initial={false}>
-                {visibleItems.map((tweet) => (
-                  <div key={tweet._id} className="mb-4">
-                    <TweetCard
-                      tweet={tweet}
-                      currentUserId={currentUser?._id}
-                      onDelete={handleDelete}
-                      onUpdate={handleUpdate}
-                    />
-                  </div>
-                ))}
-              </AnimatePresence>
-            </div>
+          <div className="space-y-4">
+            <AnimatePresence mode="popLayout" initial={false}>
+              {tweets.map((tweet) => (
+                <TweetCard
+                  key={tweet._id}
+                  tweet={tweet}
+                  currentUser={currentUser}
+                  onDelete={handleDelete}
+                  onUpdate={handleUpdate}
+                  onRetweet={handleRetweet}
+                />
+              ))}
+            </AnimatePresence>
           </div>
         )}
       </div>

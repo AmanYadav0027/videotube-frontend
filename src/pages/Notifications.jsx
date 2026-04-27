@@ -105,7 +105,7 @@ export default function Notifications() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [markingAll, setMarkingAll] = useState(false);
-  // FIX: separate loading state for delete-read action
+  //  separate loading state for delete-read action
   const [deletingRead, setDeletingRead] = useState(false);
 
   const fetchNotifications = async (f = filter) => {
@@ -140,7 +140,7 @@ export default function Notifications() {
     }
   };
 
-  // FIX: delete all read notifications at once
+  //  delete all read notifications at once
   const handleDeleteAllRead = async () => {
     if (deletingRead) return;
     const readOnes = notifications.filter((n) => n.read);
@@ -226,7 +226,7 @@ export default function Notifications() {
 
           {/* Action buttons */}
           <div className="flex items-center gap-2 flex-wrap">
-            {/* FIX: Delete all read button — only shows when there are read notifications */}
+            {/*  Delete all read button — only shows when there are read notifications */}
             {readCount > 0 && (
               <motion.button
                 whileHover={{ scale: 1.03 }}

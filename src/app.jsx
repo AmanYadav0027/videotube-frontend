@@ -1,29 +1,48 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import AppLayout from "./components/AppLayout.jsx";
+
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
-import Profile from "./pages/Profile.jsx";
-import Watch from "./pages/Watch.jsx";
-import Tweets from "./pages/Tweets.jsx";
-import Channel from "./pages/Channel.jsx";
-import UploadVideo from "./pages/UploadVideo.jsx";
-import Dashboard from "./pages/Dashboard.jsx";
-import LikedVideos from "./pages/LikedVideos.jsx";
-import History from "./pages/History.jsx";
-import Healthcheck from "./pages/Healthcheck.jsx";
-import About from "./pages/About.jsx";
-import NotFound from "./pages/NotFound.jsx";
-import Subscriptions from "./pages/Subscriptions.jsx";
-import Playlists from "./pages/Playlists.jsx";
-import PlaylistDetail from "./pages/PlaylistDetail.jsx";
-import PageTransition from "./components/PageTransition.jsx";
-import Notifications from "./pages/Notifications.jsx";
-import Support from "./pages/Support.jsx";
-import VerifyEmail from "./pages/verifyEmail.jsx";
-import VerifyEmailSent from "./pages/VerifyEmailSent.jsx";
+
+const Watch = lazy(() => import("./pages/Watch.jsx"));
+const Channel = lazy(() => import("./pages/Channel.jsx"));
+const Profile = lazy(() => import("./pages/Profile.jsx"));
+const Dashboard = lazy(() => import("./pages/Dashboard.jsx"));
+const UploadVideo = lazy(() => import("./pages/UploadVideo.jsx"));
+const EditVideo = lazy(() => import("./pages/EditVideo.jsx"));
+const Tweets = lazy(() => import("./pages/Tweets.jsx"));
+const Subscriptions = lazy(() => import("./pages/Subscriptions.jsx"));
+const Playlists = lazy(() => import("./pages/Playlists.jsx"));
+const PlaylistDetail = lazy(() => import("./pages/PlaylistDetail.jsx"));
+const LikedVideos = lazy(() => import("./pages/LikedVideos.jsx"));
+const History = lazy(() => import("./pages/History.jsx"));
+const Notifications = lazy(() => import("./pages/Notifications.jsx"));
+const Support = lazy(() => import("./pages/Support.jsx"));
+const About = lazy(() => import("./pages/About.jsx"));
+const Healthcheck = lazy(() => import("./pages/Healthcheck.jsx"));
+const NotFound = lazy(() => import("./pages/NotFound.jsx"));
+const VerifyEmail = lazy(() => import("./pages/verifyEmail.jsx"));
+const VerifyEmailSent = lazy(() => import("./pages/VerifyEmailSent.jsx"));
+
+function PageLoader() {
+  return (
+    <div
+      className="min-h-screen flex items-center justify-center"
+      style={{ background: "#050508" }}
+    >
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 rounded-full border-2 border-indigo-500/30 border-t-indigo-500 animate-spin" />
+        <span className="text-xs font-medium text-slate-600 tracking-widest uppercase">
+          Loading
+        </span>
+      </div>
+    </div>
+  );
+}
 
 function ProtectedRoute({ children }) {
   const isAuthenticated = useSelector((s) => s.auth.isAuthenticated);
@@ -43,7 +62,7 @@ function AnimatedRoutes() {
   const location = useLocation();
 
   return (
-    <PageTransition>
+    <Suspense fallback={<PageLoader />}>
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<AppLayout />}>
           {/* Public */}
@@ -104,6 +123,14 @@ function AnimatedRoutes() {
             }
           />
           <Route
+            path="edit/:videoId"
+            element={
+              <ProtectedRoute>
+                <EditVideo />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="dashboard"
             element={
               <ProtectedRoute>
@@ -155,14 +182,14 @@ function AnimatedRoutes() {
           {/* Public system */}
           <Route path="healthcheck" element={<Healthcheck />} />
           <Route path="support" element={<Support />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/verify-email-sent" element={<VerifyEmailSent />} />
+          <Route path="verify-email" element={<VerifyEmail />} />
+          <Route path="verify-email-sent" element={<VerifyEmailSent />} />
 
           {/* 404 */}
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
-    </PageTransition>
+    </Suspense>
   );
 }
 

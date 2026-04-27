@@ -46,73 +46,29 @@ const cardVariants = {
 
 function SkeletonCard() {
   return (
-    <motion.div
-      variants={cardVariants}
-      className="flex flex-col gap-3 group relative rounded-2xl"
-    >
+    <div className="flex flex-col gap-3">
       <div
-        className="w-full rounded-xl bg-[#141416] border border-white/[0.03] relative overflow-hidden shadow-sm"
+        className="w-full rounded-xl border border-white/[0.04] skeleton-shimmer"
         style={{ aspectRatio: "16/9" }}
-      >
-        <motion.div
-          animate={{ x: ["-100%", "200%"] }}
-          transition={{ repeat: Infinity, duration: 1.2, ease: "linear" }}
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.05] to-transparent w-full z-10"
-        />
-      </div>
+      />
       <div className="flex gap-3 px-1">
-        <div className="w-9 h-9 rounded-full bg-[#141416] border border-white/[0.03] shrink-0 mt-0.5 relative overflow-hidden">
-          <motion.div
-            animate={{ x: ["-100%", "200%"] }}
-            transition={{
-              repeat: Infinity,
-              duration: 1.2,
-              ease: "linear",
-              delay: 0.1,
-            }}
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.05] to-transparent w-full"
+        <div className="w-9 h-9 rounded-full shrink-0 border border-white/[0.04] skeleton-shimmer" />
+        <div className="flex-1 flex flex-col gap-2.5 pt-1">
+          <div
+            className="h-3 rounded-lg skeleton-shimmer"
+            style={{ width: "85%" }}
+          />
+          <div
+            className="h-3 rounded-lg skeleton-shimmer"
+            style={{ width: "55%" }}
+          />
+          <div
+            className="h-2.5 rounded-lg skeleton-shimmer"
+            style={{ width: "40%" }}
           />
         </div>
-        <div className="flex-1 flex flex-col gap-2.5 pt-1">
-          <div className="h-3 rounded-md bg-[#141416] border border-white/[0.03] w-full relative overflow-hidden">
-            <motion.div
-              animate={{ x: ["-100%", "200%"] }}
-              transition={{
-                repeat: Infinity,
-                duration: 1.2,
-                ease: "linear",
-                delay: 0.2,
-              }}
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.05] to-transparent w-full"
-            />
-          </div>
-          <div className="h-3 rounded-md bg-[#141416] border border-white/[0.03] w-3/4 relative overflow-hidden">
-            <motion.div
-              animate={{ x: ["-100%", "200%"] }}
-              transition={{
-                repeat: Infinity,
-                duration: 1.2,
-                ease: "linear",
-                delay: 0.3,
-              }}
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.05] to-transparent w-full"
-            />
-          </div>
-          <div className="h-2.5 rounded-md bg-[#141416] border border-white/[0.02] w-1/2 relative overflow-hidden">
-            <motion.div
-              animate={{ x: ["-100%", "200%"] }}
-              transition={{
-                repeat: Infinity,
-                duration: 1.2,
-                ease: "linear",
-                delay: 0.4,
-              }}
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.05] to-transparent w-full"
-            />
-          </div>
-        </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -138,14 +94,13 @@ export default function LikedVideos() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    document.title = "Liked Videos — MyApp";
+    document.title = "Liked Videos — VideoTube";
 
-    // FIX: renamed from `fetch` to avoid shadowing the global fetch API
     const loadLikedVideos = async () => {
       try {
         const res = await axios.get("/api/v2/likes/videos");
         const raw = res.data?.data ?? [];
-        // FIX: unwrap liked-video objects — API may return { video: {...} } or plain video
+        //  unwrap liked-video objects — API may return { video: {...} } or plain video
         const data = raw.map((item) => item.video ?? item).filter(Boolean);
         setVideos(data);
       } catch (err) {
@@ -161,23 +116,24 @@ export default function LikedVideos() {
   return (
     <div className="min-h-screen bg-[#050505] p-4 sm:p-8 relative overflow-hidden ">
       {/* Ambient glows */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <motion.div
-          animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.35, 0.2] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-600/12 rounded-full blur-[120px]"
-        />
-        <motion.div
-          animate={{ scale: [1, 1.2, 1], opacity: [0.12, 0.22, 0.12] }}
-          transition={{
-            duration: 15,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 2,
-          }}
-          className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] bg-violet-600/10 rounded-full blur-[100px]"
-        />
-      </div>
+      <svg
+        aria-hidden="true"
+        className="fixed inset-0 w-full h-full pointer-events-none z-0"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <defs>
+          <radialGradient id="lv-orb1" cx="90%" cy="0%" r="50%">
+            <stop offset="0%" stopColor="rgba(99,102,241,0.12)" />
+            <stop offset="100%" stopColor="transparent" />
+          </radialGradient>
+          <radialGradient id="lv-orb2" cx="10%" cy="100%" r="50%">
+            <stop offset="0%" stopColor="rgba(139,92,246,0.08)" />
+            <stop offset="100%" stopColor="transparent" />
+          </radialGradient>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#lv-orb1)" />
+        <rect width="100%" height="100%" fill="url(#lv-orb2)" />
+      </svg>
 
       <div className="max-w-[1600px] mx-auto relative z-10">
         {/* Header */}

@@ -201,8 +201,6 @@ export default function Home() {
         className="sticky top-0 z-20 px-4 sm:px-6 py-3 border-b border-white/[0.05]"
         style={{
           background: "rgba(5,5,8,0.9)",
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
         }}
       >
         <div className="max-w-[1600px] mx-auto flex items-center justify-between flex-wrap gap-3">
