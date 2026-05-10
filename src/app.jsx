@@ -25,7 +25,7 @@ const Support = lazy(() => import("./pages/Support.jsx"));
 const About = lazy(() => import("./pages/About.jsx"));
 const Healthcheck = lazy(() => import("./pages/Healthcheck.jsx"));
 const NotFound = lazy(() => import("./pages/NotFound.jsx"));
-const VerifyEmail = lazy(() => import("./pages/verifyEmail.jsx"));
+const VerifyEmail = lazy(() => import("./pages/VerifyEmail.jsx"));
 const VerifyEmailSent = lazy(() => import("./pages/VerifyEmailSent.jsx"));
 
 function PageLoader() {
