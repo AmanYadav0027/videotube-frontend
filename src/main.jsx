@@ -6,7 +6,7 @@ import axios from "axios";
 import { store } from "./store/store.js";
 import { logout } from "./store/authSlice.js";
 import "./index.css";
-import App from "./App.jsx";
+import App from "./app.jsx";
 import toast, { Toaster } from "react-hot-toast";
 
 axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL || "";
