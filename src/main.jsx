@@ -87,10 +87,15 @@ axios.interceptors.response.use(
       } catch (refreshError) {
         // Refresh failed (token expired/revoked) — log the user out cleanly.
         processQueue(refreshError);
-        store.dispatch(logout());
-        toast.error("Session expired. Please sign in again.", {
-          duration: 4000,
-        });
+        const isAuthenticated = store.getState().auth.isAuthenticated;
+        if (isAuthenticated) {
+          store.dispatch(logout());
+          toast.error("Session expired. Please sign in again.", {
+            duration: 4000,
+          });
+        } else {
+          store.dispatch(logout());
+        }
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
